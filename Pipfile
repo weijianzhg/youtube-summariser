@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+email-validator = "*"
+flask = "*"
+gunicorn = "*"
+openai = "*"
+trafilatura = "*"
+python-dotenv = "*"
+youtube-transcript-api = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

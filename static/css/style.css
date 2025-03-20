@@ -1,0 +1,72 @@
+/* Custom styles to complement Bootstrap theme */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+    border-radius: 8px;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Feather icons alignment */
+.feather {
+    width: 18px;
+    height: 18px;
+    vertical-align: text-bottom;
+    margin-right: 5px;
+}
+
+/* Custom spacing */
+.container {
+    max-width: 900px;
+}
+
+/* Summary text formatting */
+#summaryText {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+/* Loading spinner container */
+#loadingSpinner {
+    margin: 2rem 0;
+}
+
+/* Summary sections styling */
+#summaryText h3 {
+    color: var(--bs-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+}
+
+#summaryText h4 {
+    color: var(--bs-info);
+    margin-top: 1.2rem;
+    margin-bottom: 0.8rem;
+    font-size: 1.2rem;
+}
+
+/* Timestamp links styling */
+.timestamp-link {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    margin: 0 0.2rem;
+    background-color: var(--bs-dark);
+    border-radius: 4px;
+    color: var(--bs-info);
+    text-decoration: none;
+    font-family: monospace;
+    transition: all 0.2s ease;
+}
+
+.timestamp-link:hover {
+    background-color: var(--bs-primary);
+    color: var(--bs-light);
+    text-decoration: none;
+}
