@@ -2,6 +2,8 @@
 
 This application allows you to summarize YouTube videos by generating concise summaries using AI. The app extracts the transcript from YouTube videos and processes it with OpenAI's GPT-4o model to create structured summaries.
 
+![Video Summarizer Landing Page](img/landing.png)
+
 ## Prerequisites
 
 Before you can run this application, you need to have the following installed:
@@ -15,8 +17,8 @@ Before you can run this application, you need to have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd video-summariser
+git clone https://github.com/weijianzhg/youtube-summariser
+cd youtube-summariser
 ```
 
 ### 2. Install pipenv (if not already installed)
