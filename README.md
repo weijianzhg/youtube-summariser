@@ -59,10 +59,6 @@ The application requires the following environment variables:
 You can set these variables in your terminal:
 
 ```bash
-# On Windows (Command Prompt)
-set OPENAI_API_KEY=your_openai_api_key
-set SESSION_SECRET=your_secret_key
-
 # On Windows (PowerShell)
 $env:OPENAI_API_KEY="your_openai_api_key"
 $env:SESSION_SECRET="your_secret_key"
