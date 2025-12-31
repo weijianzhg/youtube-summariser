@@ -1,6 +1,6 @@
 # Video Summarizer - User Guide
 
-This application allows you to summarize YouTube videos by generating concise summaries using AI. The app extracts the transcript from YouTube videos and processes it with OpenAI's GPT-4o model to create structured summaries.
+This application allows you to summarize YouTube videos by generating concise summaries using AI. The app extracts the transcript from YouTube videos and processes it with your choice of LLM provider (OpenAI or Anthropic) to create structured summaries.
 
 **Two interfaces available:**
 - **Web UI** — Browser-based form with real-time summary display
@@ -53,11 +53,21 @@ After installing dependencies, activate the virtual environment:
 pipenv shell
 ```
 
-### 5. Set Up Environment Variables
+### 5. Configure LLM Provider
 
-The application requires the following environment variables:
+The application supports both **OpenAI** and **Anthropic (Claude)** models. Configure your preferred provider in `config.yaml`.
 
-- `OPENAI_API_KEY`: Your OpenAI API key
+
+### 6. Set Up Environment Variables
+
+Set the API key for your chosen provider:
+
+| Provider | Environment Variable |
+|----------|---------------------|
+| OpenAI | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+
+Additionally, for the web interface:
 - `SESSION_SECRET`: A secret key for Flask sessions
 
 You can set these variables in your terminal:
@@ -67,19 +77,29 @@ You can set these variables in your terminal:
 $env:OPENAI_API_KEY="your_openai_api_key"
 $env:SESSION_SECRET="your_secret_key"
 
+# For Anthropic instead:
+$env:ANTHROPIC_API_KEY="your_anthropic_api_key"
+
 # On macOS/Linux
 export OPENAI_API_KEY=your_openai_api_key
 export SESSION_SECRET=your_secret_key
+
+# For Anthropic instead:
+export ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
 Alternatively, create a `.env` file in the project root directory:
 
 ```
+# For OpenAI
 OPENAI_API_KEY=your_openai_api_key
 SESSION_SECRET=your_secret_key
+
+# For Anthropic (comment out OpenAI and uncomment below)
+# ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-### 6. Running the Application
+### 7. Running the Application
 
 #### Option A: Web Interface
 
@@ -101,13 +121,13 @@ Summarize videos directly from the terminal:
 
 ```bash
 # Basic usage - saves to auto-generated filename
-python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
+pipenv run python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Custom output filename
-python cli.py "https://youtu.be/VIDEO_ID" -o my_summary.txt
+pipenv run python cli.py "https://youtu.be/VIDEO_ID" -o my_summary.txt
 
 # Print to terminal only (no file saved)
-python cli.py "https://youtube.com/watch?v=VIDEO_ID" --no-save
+pipenv run python cli.py "https://youtube.com/watch?v=VIDEO_ID" --no-save
 ```
 
 **CLI Options:**
@@ -124,12 +144,13 @@ YouTube Video Summary
 Video URL: https://www.youtube.com/watch?v=VIDEO_ID
 Video ID: VIDEO_ID
 Generated: 2025-12-31 14:30:00
+Model: openai / gpt-4o
 
 ## Main Topics
 ...
 ```
 
-### 7. Using the Web Application
+### 8. Using the Web Application
 
 1. Enter a YouTube URL in the input field
 2. Click the "Summarize" button
@@ -138,22 +159,13 @@ Generated: 2025-12-31 14:30:00
 
 ## Troubleshooting
 
-- **API Key Issues**: Ensure your OpenAI API key is valid and has sufficient credits
+- **API Key Issues**: Ensure your API key (OpenAI or Anthropic) is valid and has sufficient credits
+- **"Configuration file not found"**: Make sure `config.yaml` exists in the project root
+- **"Invalid YAML in configuration file"**: Check `config.yaml` syntax is valid
 - **YouTube Transcript Errors**: Some videos may not have transcripts available or may have disabled transcript access
 - **Port Conflicts**: If port 5001 is already in use, you can specify a different port using the `--port` argument
-- **CLI "OPENAI_API_KEY not set"**: Make sure you've exported the environment variable or created a `.env` file
 - **Dependency Issues**: If you encounter any dependency-related issues, try:
   ```bash
   pipenv clean
   pipenv install
   ```
-
-## Additional Information
-
-- The application uses Flask as the web framework
-- Video transcripts are extracted using the YouTube Transcript API
-- Summaries are generated using OpenAI's GPT-4o model
-- The application is configured for development use with debug mode enabled
-- Dependencies are managed using Pipfile and Pipfile.lock for deterministic builds
-- CLI tool (`cli.py`) shares the same core logic as the web interface
-- See [ARCHITECTURE.md](ARCHITECTURE.md) for technical documentation

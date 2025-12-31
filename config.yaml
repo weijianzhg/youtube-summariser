@@ -1,0 +1,13 @@
+# LLM Configuration
+# Supported providers: "openai" or "anthropic"
+provider: "anthropic"
+
+# Model settings per provider
+openai:
+  model: "gpt-5.2"
+  max_tokens: 3000
+
+anthropic:
+  model: "claude-sonnet-4-5-20250929"
+  max_tokens: 3000
+
