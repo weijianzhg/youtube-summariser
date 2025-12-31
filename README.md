@@ -2,6 +2,10 @@
 
 This application allows you to summarize YouTube videos by generating concise summaries using AI. The app extracts the transcript from YouTube videos and processes it with OpenAI's GPT-4o model to create structured summaries.
 
+**Two interfaces available:**
+- **Web UI** — Browser-based form with real-time summary display
+- **CLI** — Terminal command that saves summaries to `.txt` files
+
 ![Video Summarizer Landing Page](img/landing.png)
 
 ## Prerequisites
@@ -77,7 +81,9 @@ SESSION_SECRET=your_secret_key
 
 ### 6. Running the Application
 
-Start the application by running:
+#### Option A: Web Interface
+
+Start the web server:
 
 ```bash
 python main.py
@@ -89,18 +95,53 @@ You can access the application by opening a web browser and navigating to:
 - `http://localhost:5001/` (if accessing from the same machine)
 - `http://your-ip-address:5001/` (if accessing from another device on the same network)
 
-### 7. Using the Application
+#### Option B: Command-Line Interface (CLI)
+
+Summarize videos directly from the terminal:
+
+```bash
+# Basic usage - saves to auto-generated filename
+python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
+
+# Custom output filename
+python cli.py "https://youtu.be/VIDEO_ID" -o my_summary.txt
+
+# Print to terminal only (no file saved)
+python cli.py "https://youtube.com/watch?v=VIDEO_ID" --no-save
+```
+
+**CLI Options:**
+
+| Flag | Description |
+|------|-------------|
+| `-o, --output` | Specify output filename (default: `summary_<video_id>_<timestamp>.txt`) |
+| `--no-save` | Print summary to terminal without saving to file |
+
+**Output file format:**
+```
+YouTube Video Summary
+=====================
+Video URL: https://www.youtube.com/watch?v=VIDEO_ID
+Video ID: VIDEO_ID
+Generated: 2025-12-31 14:30:00
+
+## Main Topics
+...
+```
+
+### 7. Using the Web Application
 
 1. Enter a YouTube URL in the input field
 2. Click the "Summarize" button
 3. Wait for the application to process the video and generate a summary
-4. View the structured summary of the video content
+4. View the structured summary with clickable timestamps
 
 ## Troubleshooting
 
 - **API Key Issues**: Ensure your OpenAI API key is valid and has sufficient credits
 - **YouTube Transcript Errors**: Some videos may not have transcripts available or may have disabled transcript access
 - **Port Conflicts**: If port 5001 is already in use, you can specify a different port using the `--port` argument
+- **CLI "OPENAI_API_KEY not set"**: Make sure you've exported the environment variable or created a `.env` file
 - **Dependency Issues**: If you encounter any dependency-related issues, try:
   ```bash
   pipenv clean
@@ -114,3 +155,5 @@ You can access the application by opening a web browser and navigating to:
 - Summaries are generated using OpenAI's GPT-4o model
 - The application is configured for development use with debug mode enabled
 - Dependencies are managed using Pipfile and Pipfile.lock for deterministic builds
+- CLI tool (`cli.py`) shares the same core logic as the web interface
+- See [ARCHITECTURE.md](ARCHITECTURE.md) for technical documentation
