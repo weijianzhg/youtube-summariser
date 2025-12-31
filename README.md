@@ -147,13 +147,3 @@ Generated: 2025-12-31 14:30:00
   pipenv clean
   pipenv install
   ```
-
-## Additional Information
-
-- The application uses Flask as the web framework
-- Video transcripts are extracted using the YouTube Transcript API
-- Summaries are generated using OpenAI's GPT-4o model
-- The application is configured for development use with debug mode enabled
-- Dependencies are managed using Pipfile and Pipfile.lock for deterministic builds
-- CLI tool (`cli.py`) shares the same core logic as the web interface
-- See [ARCHITECTURE.md](ARCHITECTURE.md) for technical documentation
