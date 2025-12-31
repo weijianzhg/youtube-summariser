@@ -3,8 +3,8 @@ import logging
 from flask import Flask, render_template, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
-from openai import OpenAI
 from youtube_helper import YouTubeHelper
+from llm_client import LLMClient
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,19 +16,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Initialize OpenAI client
-openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Initialize LLM client
+llm = LLMClient()
 
-def summarize_transcript(transcript):
-    """Summarize transcript using OpenAI API."""
-    try:
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        response = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are a video summarization expert. Create a detailed summary of the video transcript with the following sections:
+SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the video transcript with the following sections:
 
 1. Main Topics: List the key topics discussed (2-3 sentences each)
 2. Key Points: Highlight important information with timestamps
@@ -37,12 +28,12 @@ def summarize_transcript(transcript):
 5. Timestamps for Important Moments: List key moments in the video
 
 For timestamps in brackets like [MM:SS], maintain them in your response. Create clickable timestamps by formatting them as [MM:SS](https://youtu.be/VIDEO_ID?t=XXs) where XXs is the time in seconds."""
-                },
-                {"role": "user", "content": transcript}
-            ],
-            max_tokens=1500
-        )
-        return response.choices[0].message.content
+
+
+def summarize_transcript(transcript):
+    """Summarize transcript using the configured LLM."""
+    try:
+        return llm.chat(SYSTEM_PROMPT, transcript)
     except Exception as e:
         logger.error(f"Error summarizing transcript: {str(e)}")
         raise Exception("Failed to generate summary")

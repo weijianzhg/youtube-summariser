@@ -11,24 +11,15 @@ Examples:
 """
 
 import argparse
-import os
 import sys
 from datetime import datetime
 from dotenv import load_dotenv
-from openai import OpenAI
+from llm_client import LLMClient
 from youtube_helper import YouTubeHelper
 
 load_dotenv()
 
-
-def summarize_transcript(transcript: str, openai_client: OpenAI) -> str:
-    """Summarize transcript using OpenAI API."""
-    response = openai_client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {
-                "role": "system",
-                "content": """You are a video summarization expert. Create a detailed summary of the video transcript with the following sections:
+SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the video transcript with the following sections:
 
 1. Main Topics: List the key topics discussed (2-3 sentences each)
 2. Key Points: Highlight important information with timestamps
@@ -37,12 +28,11 @@ def summarize_transcript(transcript: str, openai_client: OpenAI) -> str:
 5. Timestamps for Important Moments: List key moments in the video
 
 For timestamps in brackets like [MM:SS], maintain them in your response."""
-            },
-            {"role": "user", "content": transcript}
-        ],
-        max_tokens=1500
-    )
-    return response.choices[0].message.content
+
+
+def summarize_transcript(transcript: str, llm: LLMClient) -> str:
+    """Summarize transcript using the configured LLM."""
+    return llm.chat(SYSTEM_PROMPT, transcript)
 
 
 def generate_output_filename(video_id: str) -> str:
@@ -79,11 +69,13 @@ Examples:
 
     args = parser.parse_args()
 
-    # Check for API key
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        print("Error: OPENAI_API_KEY environment variable is not set.", file=sys.stderr)
-        print("Set it with: export OPENAI_API_KEY='your-api-key'", file=sys.stderr)
+    # Initialize LLM client (will check for appropriate API key)
+    print("🔧 Initializing LLM client...")
+    try:
+        llm = LLMClient()
+        print(f"✅ Using {llm.provider} with model {llm.get_model()}")
+    except ValueError as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
     # Validate URL
@@ -114,8 +106,7 @@ Examples:
     # Generate summary
     print("🤖 Generating AI summary...")
     try:
-        openai_client = OpenAI(api_key=api_key)
-        summary = summarize_transcript(transcript, openai_client)
+        summary = summarize_transcript(transcript, llm)
     except Exception as e:
         print(f"Error generating summary: {str(e)}", file=sys.stderr)
         sys.exit(1)
@@ -128,6 +119,7 @@ Examples:
 Video URL: {args.url}
 Video ID: {video_id}
 Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Model: {llm.provider} / {llm.get_model()}
 
 {summary}
 """
@@ -149,4 +141,3 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 if __name__ == "__main__":
     main()
-
