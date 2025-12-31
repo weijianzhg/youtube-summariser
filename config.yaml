@@ -1,6 +1,6 @@
 # LLM Configuration
 # Supported providers: "openai" or "anthropic"
-provider: "openai"
+provider: "anthropic"
 
 # Model settings per provider
 openai:
