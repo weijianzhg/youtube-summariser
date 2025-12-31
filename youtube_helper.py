@@ -72,8 +72,9 @@ class YouTubeHelper:
             Exception: If transcript cannot be retrieved or processed
         """
         try:
-            # Get transcript list
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            # Get transcript using the new instance-based API (v1.0.0+)
+            ytt_api = YouTubeTranscriptApi()
+            transcript_list = ytt_api.fetch(video_id).to_raw_data()
 
             # Format transcript with timestamps
             formatted_parts = []
@@ -120,7 +121,9 @@ class YouTubeHelper:
     def get_available_transcript_languages(video_id: str) -> List[Dict[str, str]]:
         """Get list of available transcript languages for a video."""
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            # Use the new instance-based API (v1.0.0+)
+            ytt_api = YouTubeTranscriptApi()
+            transcript_list = ytt_api.list(video_id)
             available_transcripts = []
 
             for transcript in transcript_list:
