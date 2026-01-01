@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 """
-Command-line interface for YouTube Video Summarizer.
+Command-line interface for YouTube Video Summariser.
 
 Usage:
-    python cli.py <youtube_url> [--output filename.txt]
+    youtube-summariser <youtube_url> [--output filename.txt]
 
 Examples:
-    python cli.py "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    python cli.py "https://youtu.be/dQw4w9WgXcQ" -o my_summary.txt
+    youtube-summariser "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    youtube-summariser "https://youtu.be/dQw4w9WgXcQ" -o my_summary.txt
 """
 
 import argparse
 import sys
 from datetime import datetime
+
 from dotenv import load_dotenv
-from llm_client import LLMClient
-from youtube_helper import YouTubeHelper
+
+from .llm_client import LLMClient
+from .youtube_helper import YouTubeHelper
+from . import __version__
 
 load_dotenv()
 
@@ -43,17 +46,19 @@ def generate_output_filename(video_id: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
+        prog="youtube-summariser",
         description="Summarize YouTube videos from the command line",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
-  python cli.py "https://youtu.be/VIDEO_ID" --output summary.txt
-  python cli.py "https://youtube.com/watch?v=VIDEO_ID" -o my_notes.txt
+  youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
+  youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.txt
+  youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" -o my_notes.txt
         """
     )
     parser.add_argument(
         "url",
+        nargs="?",
         help="YouTube video URL to summarize"
     )
     parser.add_argument(
@@ -66,13 +71,29 @@ Examples:
         action="store_true",
         help="Print summary to stdout without saving to file"
     )
+    parser.add_argument(
+        "--provider",
+        choices=["openai", "anthropic"],
+        help="LLM provider to use (overrides config.yaml)",
+        default=None
+    )
+    parser.add_argument(
+        "-v", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}"
+    )
 
     args = parser.parse_args()
 
-    # Initialize LLM client (will check for appropriate API key)
+    # Check if URL was provided
+    if not args.url:
+        parser.print_help()
+        sys.exit(0)
+
+    # Initialize LLM client
     print("🔧 Initializing LLM client...")
     try:
-        llm = LLMClient()
+        llm = LLMClient(provider=args.provider)
         print(f"✅ Using {llm.provider} with model {llm.get_model()}")
     except ValueError as e:
         print(f"Error: {str(e)}", file=sys.stderr)
@@ -141,3 +162,4 @@ Model: {llm.provider} / {llm.get_model()}
 
 if __name__ == "__main__":
     main()
+

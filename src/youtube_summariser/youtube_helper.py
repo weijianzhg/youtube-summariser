@@ -1,11 +1,13 @@
+"""YouTube helper utilities for extracting video IDs and transcripts."""
+
 import logging
 import re
 from typing import Optional, Dict, List
 from urllib.parse import urlparse, parse_qs
 from youtube_transcript_api import YouTubeTranscriptApi
 
-# Configure logging
 logger = logging.getLogger(__name__)
+
 
 class YouTubeHelper:
     """Helper class for YouTube video operations."""
@@ -21,7 +23,6 @@ class YouTubeHelper:
     def extract_video_id(url: str) -> Optional[str]:
         """Extract YouTube video ID from various URL formats."""
         try:
-            # First try parsing URL parameters
             parsed_url = urlparse(url)
 
             # Handle youtu.be URLs
@@ -63,16 +64,15 @@ class YouTubeHelper:
         Get video transcript using youtube_transcript_api.
 
         Args:
-            video_id (str): The YouTube video ID
+            video_id: The YouTube video ID
 
         Returns:
-            str: The formatted transcript text with timestamps
+            The formatted transcript text with timestamps
 
         Raises:
             Exception: If transcript cannot be retrieved or processed
         """
         try:
-            # Get transcript using the new instance-based API (v1.0.0+)
             ytt_api = YouTubeTranscriptApi()
             transcript_list = ytt_api.fetch(video_id).to_raw_data()
 
@@ -83,7 +83,6 @@ class YouTubeHelper:
                 text = entry['text']
                 formatted_parts.append(f"[{timestamp}] {text}")
 
-            # Join all parts with newlines
             transcript_text = '\n'.join(formatted_parts)
 
             if not transcript_text:
@@ -101,9 +100,10 @@ class YouTubeHelper:
         try:
             parsed_url = urlparse(url)
 
-            # Check if domain is youtube.com or youtu.be
-            valid_domains = ['youtube.com', 'youtu.be', 'www.youtube.com']
-            if parsed_url.netloc not in valid_domains:
+            # Check if domain contains youtube.com or youtu.be (substring match)
+            # This handles subdomains like m.youtube.com, music.youtube.com, etc.
+            is_youtube = 'youtube.com' in parsed_url.netloc or 'youtu.be' in parsed_url.netloc
+            if not is_youtube:
                 return False
 
             # Check if video ID can be extracted
@@ -121,7 +121,6 @@ class YouTubeHelper:
     def get_available_transcript_languages(video_id: str) -> List[Dict[str, str]]:
         """Get list of available transcript languages for a video."""
         try:
-            # Use the new instance-based API (v1.0.0+)
             ytt_api = YouTubeTranscriptApi()
             transcript_list = ytt_api.list(video_id)
             available_transcripts = []
@@ -137,3 +136,4 @@ class YouTubeHelper:
         except Exception as e:
             logger.error(f"Error getting available transcripts for video {video_id}: {str(e)}")
             raise Exception("Failed to get available transcripts")
+

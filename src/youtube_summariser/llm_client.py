@@ -1,22 +1,28 @@
-"""
-LLM Client abstraction for OpenAI and Anthropic.
-"""
+"""LLM Client abstraction for OpenAI and Anthropic."""
+
 import os
-import yaml
 import logging
+from importlib import resources
 from typing import Optional
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
-# Load configuration
+
 def load_config() -> dict:
-    """Load configuration from config.yaml."""
-    config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+    """Load configuration from bundled config.yaml."""
     try:
-        with open(config_path, "r") as f:
+        config_file = resources.files(__package__) / "config.yaml"
+        with config_file.open("r") as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
-        raise ValueError(f"Configuration file not found: {config_path}")
+        # Return default config if file not found
+        return {
+            "provider": "openai",
+            "openai": {"model": "gpt-4o", "max_tokens": 3000},
+            "anthropic": {"model": "claude-sonnet-4-20250514", "max_tokens": 3000}
+        }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
 
@@ -24,10 +30,16 @@ def load_config() -> dict:
 class LLMClient:
     """Unified LLM client supporting OpenAI and Anthropic."""
 
-    def __init__(self, config: Optional[dict] = None):
-        """Initialize the LLM client based on configuration."""
+    def __init__(self, config: Optional[dict] = None, provider: Optional[str] = None):
+        """
+        Initialize the LLM client.
+
+        Args:
+            config: Optional configuration dict. If not provided, loads from config.yaml.
+            provider: Optional provider override ('openai' or 'anthropic').
+        """
         self.config = config or load_config()
-        self.provider = self.config.get("provider", "openai")
+        self.provider = provider or self.config.get("provider", "openai")
         self._client = None
         self._init_client()
 
@@ -51,12 +63,13 @@ class LLMClient:
     def get_model(self) -> str:
         """Get the model name for the current provider."""
         provider_config = self.config.get(self.provider, {})
-        return provider_config.get("model", "gpt-4o" if self.provider == "openai" else "claude-sonnet-4-20250514")
+        default = "gpt-4o" if self.provider == "openai" else "claude-sonnet-4-20250514"
+        return provider_config.get("model", default)
 
     def get_max_tokens(self) -> int:
         """Get max tokens for the current provider."""
         provider_config = self.config.get(self.provider, {})
-        return provider_config.get("max_tokens", 1500)
+        return provider_config.get("max_tokens", 3000)
 
     def chat(self, system_prompt: str, user_message: str) -> str:
         """
