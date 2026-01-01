@@ -45,18 +45,32 @@ class LLMClient:
 
     def _init_client(self):
         """Initialize the appropriate client based on provider."""
+        openai_key = os.environ.get("OPENAI_API_KEY")
+        anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+
+        # Check if neither key is available
+        if not openai_key and not anthropic_key:
+            raise ValueError(
+                "No API keys found. You need at least one of OPENAI_API_KEY "
+                "or ANTHROPIC_API_KEY environment variable to be set."
+            )
+
         if self.provider == "openai":
             from openai import OpenAI
-            api_key = os.environ.get("OPENAI_API_KEY")
-            if not api_key:
-                raise ValueError("OPENAI_API_KEY environment variable is not set")
-            self._client = OpenAI(api_key=api_key)
+            if not openai_key:
+                raise ValueError(
+                    "OPENAI_API_KEY environment variable is not set. "
+                    "Use --provider anthropic to use your configured ANTHROPIC_API_KEY instead."
+                )
+            self._client = OpenAI(api_key=openai_key)
         elif self.provider == "anthropic":
             import anthropic
-            api_key = os.environ.get("ANTHROPIC_API_KEY")
-            if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
-            self._client = anthropic.Anthropic(api_key=api_key)
+            if not anthropic_key:
+                raise ValueError(
+                    "ANTHROPIC_API_KEY environment variable is not set. "
+                    "Use --provider openai to use your configured OPENAI_API_KEY instead."
+                )
+            self._client = anthropic.Anthropic(api_key=anthropic_key)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
