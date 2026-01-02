@@ -20,8 +20,8 @@ def load_config() -> dict:
         # Return default config if file not found
         return {
             "provider": "openai",
-            "openai": {"model": "gpt-4o", "max_tokens": 3000},
-            "anthropic": {"model": "claude-sonnet-4-20250514", "max_tokens": 3000}
+            "openai": {"model": "gpt-5.2", "max_tokens": 3000},
+            "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 3000}
         }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
@@ -77,7 +77,7 @@ class LLMClient:
     def get_model(self) -> str:
         """Get the model name for the current provider."""
         provider_config = self.config.get(self.provider, {})
-        default = "gpt-4o" if self.provider == "openai" else "claude-sonnet-4-20250514"
+        default = "gpt-5.2" if self.provider == "openai" else "claude-sonnet-4-5-20250929"
         return provider_config.get("model", default)
 
     def get_max_tokens(self) -> int:

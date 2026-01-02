@@ -76,7 +76,7 @@ YouTube Video Summary
 Video URL: https://www.youtube.com/watch?v=VIDEO_ID
 Video ID: VIDEO_ID
 Generated: 2025-01-01 14:30:00
-Model: anthropic / claude-sonnet-4-20250514
+Model: anthropic / claude-sonnet-4-5-20250929
 
 ## Main Topics
 ...
@@ -98,6 +98,20 @@ Model: anthropic / claude-sonnet-4-20250514
 
 - Python 3.10+
 - An API key for OpenAI or Anthropic
+
+## Supported Models
+
+### OpenAI
+- **GPT-5.2** (default) - Latest model with enhanced reasoning
+- GPT-5.2-chat-latest - Instant variant
+- GPT-5.2-pro - Pro variant with `xhigh` reasoning effort
+
+### Anthropic
+- **Claude Sonnet 4.5** (default) - Latest model with 1M token context window
+- Advanced tool use capabilities
+- Improved code understanding
+
+You can customize the model used by editing the `config.yaml` file in the package.
 
 ## License
 
