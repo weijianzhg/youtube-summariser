@@ -99,20 +99,6 @@ Model: anthropic / claude-sonnet-4-5-20250929
 - Python 3.10+
 - An API key for OpenAI or Anthropic
 
-## Supported Models
-
-### OpenAI
-- **GPT-5.2** (default) - Latest model with enhanced reasoning
-- GPT-5.2-chat-latest - Instant variant
-- GPT-5.2-pro - Pro variant with `xhigh` reasoning effort
-
-### Anthropic
-- **Claude Sonnet 4.5** (default) - Latest model with 1M token context window
-- Advanced tool use capabilities
-- Improved code understanding
-
-You can customize the model used by editing the `config.yaml` file in the package.
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
