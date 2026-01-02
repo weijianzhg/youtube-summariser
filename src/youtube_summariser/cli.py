@@ -33,9 +33,35 @@ SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summa
 For timestamps in brackets like [MM:SS], maintain them in your response."""
 
 
-def summarize_transcript(transcript: str, llm: LLMClient) -> str:
-    """Summarize transcript using the configured LLM."""
-    return llm.chat(SYSTEM_PROMPT, transcript)
+def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -> str:
+    """
+    Summarize transcript using the configured LLM.
+
+    Args:
+        transcript: The video transcript to summarize
+        llm: The LLM client instance
+        stream: If True, use streaming and print output incrementally
+
+    Returns:
+        The complete summary text
+    """
+    if stream:
+        # Use streaming and collect the full response
+        summary_parts = []
+        print("\n📝 Summary:\n")
+        print("=" * 50)
+        try:
+            for chunk in llm.stream_chat(SYSTEM_PROMPT, transcript):
+                print(chunk, end="", flush=True)
+                summary_parts.append(chunk)
+            print("\n" + "=" * 50 + "\n")
+            return "".join(summary_parts)
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Summary generation interrupted by user")
+            return "".join(summary_parts)
+    else:
+        # Non-streaming fallback
+        return llm.chat(SYSTEM_PROMPT, transcript)
 
 
 def generate_output_filename(video_id: str) -> str:
@@ -76,6 +102,11 @@ Examples:
         choices=["openai", "anthropic"],
         help="LLM provider to use (overrides config.yaml)",
         default=None
+    )
+    parser.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming output (wait for complete response before displaying)"
     )
     parser.add_argument(
         "-v", "--version",
@@ -127,14 +158,15 @@ Examples:
     # Generate summary
     print("🤖 Generating AI summary...")
     try:
-        summary = summarize_transcript(transcript, llm)
+        summary = summarize_transcript(transcript, llm, stream=not args.no_stream)
     except Exception as e:
-        print(f"Error generating summary: {str(e)}", file=sys.stderr)
+        print(f"\nError generating summary: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
-    print("✅ Summary generated")
+    if args.no_stream:
+        print("✅ Summary generated")
 
-    # Prepare output content
+    # Prepare output content for file saving
     output_content = f"""YouTube Video Summary
 =====================
 Video URL: {args.url}
@@ -147,8 +179,10 @@ Model: {llm.provider} / {llm.get_model()}
 
     # Output handling
     if args.no_save:
-        print("\n" + "=" * 50)
-        print(output_content)
+        if args.no_stream:
+            # Only print full formatted output if we haven't already streamed it
+            print("\n" + "=" * 50)
+            print(output_content)
     else:
         output_file = args.output or generate_output_filename(video_id)
 
@@ -156,8 +190,10 @@ Model: {llm.provider} / {llm.get_model()}
             f.write(output_content)
 
         print(f"💾 Summary saved to: {output_file}")
-        print("\n" + "=" * 50)
-        print(output_content)
+        if args.no_stream:
+            # Only print full formatted output if we haven't already streamed it
+            print("\n" + "=" * 50)
+            print(output_content)
 
 
 if __name__ == "__main__":
