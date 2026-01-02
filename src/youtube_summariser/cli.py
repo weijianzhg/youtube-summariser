@@ -16,13 +16,14 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
+from . import __version__
 from .llm_client import LLMClient
 from .youtube_helper import YouTubeHelper
-from . import __version__
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the video transcript with the following sections:
+SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the \
+video transcript with the following sections:
 
 1. Main Topics: List the key topics discussed (2-3 sentences each)
 2. Key Points: Highlight important information with timestamps

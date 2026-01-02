@@ -2,8 +2,9 @@
 
 import logging
 import re
-from typing import Optional, Dict, List
-from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Optional
+from urllib.parse import parse_qs, urlparse
+
 from youtube_transcript_api import YouTubeTranscriptApi
 
 logger = logging.getLogger(__name__)
