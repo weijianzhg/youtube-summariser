@@ -16,13 +16,14 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
+from . import __version__
 from .llm_client import LLMClient
 from .youtube_helper import YouTubeHelper
-from . import __version__
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the video transcript with the following sections:
+SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the \
+video transcript with the following sections:
 
 1. Main Topics: List the key topics discussed (2-3 sentences each)
 2. Key Points: Highlight important information with timestamps
@@ -80,39 +81,30 @@ Examples:
   youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
   youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.txt
   youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" -o my_notes.txt
-        """
+        """,
     )
+    parser.add_argument("url", nargs="?", help="YouTube video URL to summarize")
     parser.add_argument(
-        "url",
-        nargs="?",
-        help="YouTube video URL to summarize"
-    )
-    parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         help="Output filename (default: summary_<video_id>_<timestamp>.txt)",
-        default=None
+        default=None,
     )
     parser.add_argument(
-        "--no-save",
-        action="store_true",
-        help="Print summary to stdout without saving to file"
+        "--no-save", action="store_true", help="Print summary to stdout without saving to file"
     )
     parser.add_argument(
         "--provider",
         choices=["openai", "anthropic"],
         help="LLM provider to use (overrides config.yaml)",
-        default=None
+        default=None,
     )
     parser.add_argument(
         "--no-stream",
         action="store_true",
-        help="Disable streaming output (wait for complete response before displaying)"
+        help="Disable streaming output (wait for complete response before displaying)",
     )
-    parser.add_argument(
-        "-v", "--version",
-        action="version",
-        version=f"%(prog)s {__version__}"
-    )
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
 
     args = parser.parse_args()
 
@@ -198,4 +190,3 @@ Model: {llm.provider} / {llm.get_model()}
 
 if __name__ == "__main__":
     main()
-

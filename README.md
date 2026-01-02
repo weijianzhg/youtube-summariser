@@ -76,7 +76,7 @@ YouTube Video Summary
 Video URL: https://www.youtube.com/watch?v=VIDEO_ID
 Video ID: VIDEO_ID
 Generated: 2025-01-01 14:30:00
-Model: anthropic / claude-sonnet-4-20250514
+Model: anthropic / claude-sonnet-4-5-20250929
 
 ## Main Topics
 ...

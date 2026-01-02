@@ -36,7 +36,7 @@ class TestLLMClientAPIKeyValidation:
         assert "at least one" in error_msg.lower()
 
     def test_no_api_keys_with_anthropic_provider_raises_unified_error(self, monkeypatch):
-        """When neither API key is set and anthropic provider requested, should raise unified error."""
+        """When neither API key is set and anthropic provider requested, raise unified error."""
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
@@ -48,7 +48,7 @@ class TestLLMClientAPIKeyValidation:
         assert "at least one" in error_msg.lower()
 
     def test_openai_provider_with_only_anthropic_key_suggests_alternative(self, monkeypatch):
-        """When only ANTHROPIC_API_KEY is set but openai provider requested, should suggest alternative."""
+        """When only ANTHROPIC_API_KEY is set but openai provider requested, suggest alternative."""
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
 
@@ -62,7 +62,7 @@ class TestLLMClientAPIKeyValidation:
         assert "--provider anthropic" in error_msg.lower()
 
     def test_anthropic_provider_with_only_openai_key_suggests_alternative(self, monkeypatch):
-        """When only OPENAI_API_KEY is set but anthropic provider requested, should suggest alternative."""
+        """When only OPENAI_API_KEY is set but anthropic provider requested, suggest alternative."""
         monkeypatch.setenv("OPENAI_API_KEY", "test-key-12345")
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 

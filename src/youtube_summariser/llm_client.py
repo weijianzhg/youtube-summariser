@@ -1,9 +1,9 @@
 """LLM Client abstraction for OpenAI and Anthropic."""
 
-import os
 import logging
+import os
 from importlib import resources
-from typing import Optional, Iterator
+from typing import Iterator, Optional
 
 import yaml
 
@@ -20,8 +20,8 @@ def load_config() -> dict:
         # Return default config if file not found
         return {
             "provider": "openai",
-            "openai": {"model": "gpt-4o", "max_tokens": 3000},
-            "anthropic": {"model": "claude-sonnet-4-20250514", "max_tokens": 3000}
+            "openai": {"model": "gpt-5.2", "max_tokens": 3000},
+            "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 3000},
         }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
@@ -57,6 +57,7 @@ class LLMClient:
 
         if self.provider == "openai":
             from openai import OpenAI
+
             if not openai_key:
                 raise ValueError(
                     "OPENAI_API_KEY environment variable is not set. "
@@ -65,6 +66,7 @@ class LLMClient:
             self._client = OpenAI(api_key=openai_key)
         elif self.provider == "anthropic":
             import anthropic
+
             if not anthropic_key:
                 raise ValueError(
                     "ANTHROPIC_API_KEY environment variable is not set. "
@@ -77,7 +79,7 @@ class LLMClient:
     def get_model(self) -> str:
         """Get the model name for the current provider."""
         provider_config = self.config.get(self.provider, {})
-        default = "gpt-4o" if self.provider == "openai" else "claude-sonnet-4-20250514"
+        default = "gpt-5.2" if self.provider == "openai" else "claude-sonnet-4-5-20250929"
         return provider_config.get("model", default)
 
     def get_max_tokens(self) -> int:
@@ -127,9 +129,9 @@ class LLMClient:
             model=self.get_model(),
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
+                {"role": "user", "content": user_message},
             ],
-            max_completion_tokens=self.get_max_tokens()
+            max_completion_tokens=self.get_max_tokens(),
         )
         return response.choices[0].message.content
 
@@ -139,9 +141,7 @@ class LLMClient:
             model=self.get_model(),
             max_tokens=self.get_max_tokens(),
             system=system_prompt,
-            messages=[
-                {"role": "user", "content": user_message}
-            ]
+            messages=[{"role": "user", "content": user_message}],
         )
         return response.content[0].text
 
@@ -151,10 +151,10 @@ class LLMClient:
             model=self.get_model(),
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
+                {"role": "user", "content": user_message},
             ],
             max_completion_tokens=self.get_max_tokens(),
-            stream=True
+            stream=True,
         )
         for chunk in stream:
             if chunk.choices and len(chunk.choices) > 0:
@@ -168,9 +168,7 @@ class LLMClient:
             model=self.get_model(),
             max_tokens=self.get_max_tokens(),
             system=system_prompt,
-            messages=[
-                {"role": "user", "content": user_message}
-            ]
+            messages=[{"role": "user", "content": user_message}],
         ) as stream:
             for text in stream.text_stream:
                 yield text

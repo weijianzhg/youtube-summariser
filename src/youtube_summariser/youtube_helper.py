@@ -2,8 +2,9 @@
 
 import logging
 import re
-from typing import Optional, Dict, List
-from urllib.parse import urlparse, parse_qs
+from typing import Dict, List, Optional
+from urllib.parse import parse_qs, urlparse
+
 from youtube_transcript_api import YouTubeTranscriptApi
 
 logger = logging.getLogger(__name__)
@@ -26,25 +27,25 @@ class YouTubeHelper:
             parsed_url = urlparse(url)
 
             # Handle youtu.be URLs
-            if 'youtu.be' in parsed_url.netloc:
-                return parsed_url.path.strip('/')
+            if "youtu.be" in parsed_url.netloc:
+                return parsed_url.path.strip("/")
 
             # Handle youtube.com URLs
-            if 'youtube.com' in parsed_url.netloc:
+            if "youtube.com" in parsed_url.netloc:
                 # Try to get v parameter from query string
-                if 'v' in parse_qs(parsed_url.query):
-                    return parse_qs(parsed_url.query)['v'][0]
+                if "v" in parse_qs(parsed_url.query):
+                    return parse_qs(parsed_url.query)["v"][0]
 
                 # Handle embed and direct video URLs
-                path_parts = parsed_url.path.split('/')
-                if 'embed' in path_parts or 'v' in path_parts:
+                path_parts = parsed_url.path.split("/")
+                if "embed" in path_parts or "v" in path_parts:
                     return path_parts[-1]
 
             # If above methods fail, try regex pattern matching
             patterns = [
-                r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)',
-                r'(?:youtube\.com\/embed\/)([\w-]+)',
-                r'(?:youtube\.com\/v\/)([\w-]+)'
+                r"(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)",
+                r"(?:youtube\.com\/embed\/)([\w-]+)",
+                r"(?:youtube\.com\/v\/)([\w-]+)",
             ]
 
             for pattern in patterns:
@@ -79,11 +80,11 @@ class YouTubeHelper:
             # Format transcript with timestamps
             formatted_parts = []
             for entry in transcript_list:
-                timestamp = YouTubeHelper.format_timestamp(entry['start'])
-                text = entry['text']
+                timestamp = YouTubeHelper.format_timestamp(entry["start"])
+                text = entry["text"]
                 formatted_parts.append(f"[{timestamp}] {text}")
 
-            transcript_text = '\n'.join(formatted_parts)
+            transcript_text = "\n".join(formatted_parts)
 
             if not transcript_text:
                 raise Exception("Empty transcript received")
@@ -102,7 +103,7 @@ class YouTubeHelper:
 
             # Check if domain contains youtube.com or youtu.be (substring match)
             # This handles subdomains like m.youtube.com, music.youtube.com, etc.
-            is_youtube = 'youtube.com' in parsed_url.netloc or 'youtu.be' in parsed_url.netloc
+            is_youtube = "youtube.com" in parsed_url.netloc or "youtu.be" in parsed_url.netloc
             if not is_youtube:
                 return False
 
@@ -126,14 +127,12 @@ class YouTubeHelper:
             available_transcripts = []
 
             for transcript in transcript_list:
-                available_transcripts.append({
-                    'language_code': transcript.language_code,
-                    'language': transcript.language
-                })
+                available_transcripts.append(
+                    {"language_code": transcript.language_code, "language": transcript.language}
+                )
 
             return available_transcripts
 
         except Exception as e:
             logger.error(f"Error getting available transcripts for video {video_id}: {str(e)}")
             raise Exception("Failed to get available transcripts")
-
