@@ -49,16 +49,15 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
     if stream:
         # Use streaming and collect the full response
         summary_parts = []
-        print("\n📝 Summary:\n")
-        print("=" * 50)
+        print("\n--- Summary ---\n")
         try:
             for chunk in llm.stream_chat(SYSTEM_PROMPT, transcript):
                 print(chunk, end="", flush=True)
                 summary_parts.append(chunk)
-            print("\n" + "=" * 50 + "\n")
+            print("\n")
             return "".join(summary_parts)
         except KeyboardInterrupt:
-            print("\n\n⚠️  Summary generation interrupted by user")
+            print("\n\nSummary generation interrupted by user.")
             return "".join(summary_parts)
     else:
         # Non-streaming fallback
@@ -114,16 +113,14 @@ Examples:
         sys.exit(0)
 
     # Initialize LLM client
-    print("🔧 Initializing LLM client...")
     try:
         llm = LLMClient(provider=args.provider)
-        print(f"✅ Using {llm.provider} with model {llm.get_model()}")
+        print(f"Using {llm.provider}/{llm.get_model()}")
     except ValueError as e:
         print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
     # Validate URL
-    print(f"🔗 Processing URL: {args.url}")
 
     if not YouTubeHelper.validate_url(args.url):
         print("Error: Invalid YouTube URL", file=sys.stderr)
@@ -135,20 +132,15 @@ Examples:
         print("Error: Could not extract video ID from URL", file=sys.stderr)
         sys.exit(1)
 
-    print(f"📺 Video ID: {video_id}")
-
-    # Fetch transcript
-    print("📝 Fetching transcript...")
+    print(f"Fetching transcript for {video_id}...")
     try:
         transcript = YouTubeHelper.get_transcript(video_id)
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"✅ Transcript fetched ({len(transcript)} characters)")
-
-    # Generate summary
-    print("🤖 Generating AI summary...")
+    print(f"Transcript: {len(transcript)} characters")
+    print("Generating summary...")
     try:
         summary = summarize_transcript(transcript, llm, stream=not args.no_stream)
     except Exception as e:
@@ -156,7 +148,7 @@ Examples:
         sys.exit(1)
 
     if args.no_stream:
-        print("✅ Summary generated")
+        print("Done.")
 
     # Prepare output content for file saving
     output_content = f"""YouTube Video Summary
@@ -181,7 +173,7 @@ Model: {llm.provider} / {llm.get_model()}
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(output_content)
 
-        print(f"💾 Summary saved to: {output_file}")
+        print(f"Saved to {output_file}")
         if args.no_stream:
             # Only print full formatted output if we haven't already streamed it
             print("\n" + "=" * 50)
