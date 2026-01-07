@@ -22,16 +22,24 @@ from .youtube_helper import YouTubeHelper
 
 load_dotenv()
 
-SYSTEM_PROMPT = """You are a video summarization expert. Create a detailed summary of the \
-video transcript with the following sections:
+SYSTEM_PROMPT = """Summarize this video transcript concisely.
 
-1. Main Topics: List the key topics discussed (2-3 sentences each)
-2. Key Points: Highlight important information with timestamps
-3. Detailed Summary: A comprehensive breakdown of the content (300-400 words)
-4. Notable Quotes: Include 2-3 significant quotes with their timestamps
-5. Timestamps for Important Moments: List key moments in the video
+## Output Format (use markdown):
 
-For timestamps in brackets like [MM:SS], maintain them in your response."""
+### TL;DR
+One paragraph capturing the essence (2-3 sentences).
+
+### Key Takeaways
+- Bullet points of the most important insights
+- Include timestamps like [MM:SS] where relevant
+
+### Detailed Summary
+Comprehensive breakdown. Scale length to video complexity (~50 words per 5 minutes of content).
+
+### Notable Quotes
+1-3 memorable quotes with timestamps, if any stand out.
+
+Preserve any timestamps from the transcript. Be concise—omit filler and tangents."""
 
 
 def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -> str:

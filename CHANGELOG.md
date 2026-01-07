@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-01-07
+
+### Changed
+- Revamped summarization prompt for better output quality:
+  - Added TL;DR section for quick scanning
+  - Consolidated redundant timestamp sections into Key Takeaways
+  - Summary length now scales with video complexity (~50 words per 5 minutes)
+  - Explicit markdown formatting for consistent output
+  - More concise output—omits filler and tangents
+
 ## [0.3.1] - 2026-01-06
 
 ### Changed
