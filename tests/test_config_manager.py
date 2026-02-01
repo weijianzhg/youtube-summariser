@@ -112,9 +112,7 @@ class TestSaveUserConfig:
         config_dir = tmp_path / ".youtube-summariser"
         config_file = config_dir / "config.yaml"
 
-        monkeypatch.setattr(
-            "youtube_summariser.config_manager.get_config_dir", lambda: config_dir
-        )
+        monkeypatch.setattr("youtube_summariser.config_manager.get_config_dir", lambda: config_dir)
         monkeypatch.setattr(
             "youtube_summariser.config_manager.get_config_path", lambda: config_file
         )
@@ -142,9 +140,7 @@ class TestSaveUserConfig:
         config_file = config_dir / "config.yaml"
         config_file.write_text("provider: old_value\n")
 
-        monkeypatch.setattr(
-            "youtube_summariser.config_manager.get_config_dir", lambda: config_dir
-        )
+        monkeypatch.setattr("youtube_summariser.config_manager.get_config_dir", lambda: config_dir)
         monkeypatch.setattr(
             "youtube_summariser.config_manager.get_config_path", lambda: config_file
         )

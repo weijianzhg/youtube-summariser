@@ -62,9 +62,9 @@ class LLMClient:
         openai_key = os.environ.get("OPENAI_API_KEY") or self.config.get("openai", {}).get(
             "api_key"
         )
-        anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or self.config.get(
-            "anthropic", {}
-        ).get("api_key")
+        anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or self.config.get("anthropic", {}).get(
+            "api_key"
+        )
 
         # Check if neither key is available
         if not openai_key and not anthropic_key:

@@ -143,9 +143,7 @@ def run_init() -> None:
     else:
         _configure_openai(config, existing_config)
         print()
-        configure_other = prompt_with_default(
-            "Do you also want to configure Anthropic? (y/N)", "n"
-        )
+        configure_other = prompt_with_default("Do you also want to configure Anthropic? (y/N)", "n")
         if configure_other.lower() == "y":
             print()
             _configure_anthropic(config, existing_config)

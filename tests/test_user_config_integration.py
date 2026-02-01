@@ -36,9 +36,7 @@ anthropic:
             with open(config_file, "r") as f:
                 return yaml.safe_load(f)
 
-        monkeypatch.setattr(
-            "youtube_summariser.llm_client.load_user_config", patched_load
-        )
+        monkeypatch.setattr("youtube_summariser.llm_client.load_user_config", patched_load)
 
         # Load config and verify it includes user config
         config = load_config()
@@ -90,9 +88,7 @@ anthropic:
             with open(config_file, "r") as f:
                 return yaml.safe_load(f)
 
-        monkeypatch.setattr(
-            "youtube_summariser.llm_client.load_user_config", patched_load
-        )
+        monkeypatch.setattr("youtube_summariser.llm_client.load_user_config", patched_load)
 
         config = load_config()
         assert config["provider"] == "openai"
@@ -120,9 +116,7 @@ anthropic:
             with open(config_file, "r") as f:
                 return yaml.safe_load(f)
 
-        monkeypatch.setattr(
-            "youtube_summariser.llm_client.load_user_config", patched_load
-        )
+        monkeypatch.setattr("youtube_summariser.llm_client.load_user_config", patched_load)
 
         config = load_config()
         assert config["openai"]["model"] == "custom-model"
@@ -131,9 +125,7 @@ anthropic:
     def test_falls_back_to_bundled_when_no_user_config(self, monkeypatch):
         """Should use bundled config when no user config exists."""
         # Make load_user_config return None
-        monkeypatch.setattr(
-            "youtube_summariser.llm_client.load_user_config", lambda: None
-        )
+        monkeypatch.setattr("youtube_summariser.llm_client.load_user_config", lambda: None)
 
         config = load_config()
         # Should have the bundled config values
