@@ -16,36 +16,62 @@ cd youtube-summariser
 pip install -e .
 ```
 
-## Configuration
+## Quick Start
 
-### API Keys
-
-Set your API key for your preferred provider:
+Run the interactive setup to configure your API keys:
 
 ```bash
+youtube-summariser init
+```
+
+This guides you through:
+- Selecting your default provider (Anthropic or OpenAI)
+- Entering your API key (securely masked)
+- Optionally configuring a secondary provider
+
+## Configuration
+
+### Option 1: Interactive Setup (Recommended)
+
+```bash
+youtube-summariser init
+```
+
+Settings are saved to a platform-appropriate location:
+- **macOS/Linux**: `~/.youtube-summariser/config.yaml`
+- **Windows**: `%APPDATA%\youtube-summariser\config.yaml`
+
+Re-run `init` anytime to update your settings.
+
+### Option 2: Environment Variables
+
+```bash
+# For Anthropic (default provider)
+export ANTHROPIC_API_KEY=your_anthropic_api_key
+
 # For OpenAI
 export OPENAI_API_KEY=your_openai_api_key
-
-# For Anthropic
-export ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-Or create a `.env` file in your working directory:
+Or create a `.env` file in your working directory.
 
-```
-OPENAI_API_KEY=your_openai_api_key
-# or
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
+### Configuration Priority
+
+1. Environment variables (highest priority)
+2. User config file (`~/.youtube-summariser/config.yaml`)
+3. Bundled defaults
 
 ### Default Provider
 
-The default provider is **Anthropic**. You can override this per command using `--provider`.
+The default provider is **Anthropic**. You can change this via `init` or override per command using `--provider`.
 
 ## Usage
 
 ```bash
-# Basic usage - saves summary to auto-generated filename
+# Interactive configuration
+youtube-summariser init
+
+# Summarize a video (saves to auto-generated filename)
 youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Specify output filename
@@ -58,6 +84,15 @@ youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --no-save
 youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
 ```
 
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `init` | Interactive setup for API keys and preferences |
+| `summarise` | Summarize a YouTube video (also aliased as `summarize`) |
+
+You can also pass a URL directly without the `summarise` subcommand for convenience.
+
 ### Options
 
 | Flag | Description |
@@ -65,6 +100,7 @@ youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
 | `-o, --output` | Specify output filename (default: `summary_<video_id>_<timestamp>.txt`) |
 | `--no-save` | Print summary to terminal without saving to file |
 | `--provider` | LLM provider to use: `openai` or `anthropic` |
+| `--no-stream` | Disable streaming output |
 | `-v, --version` | Show version number |
 | `-h, --help` | Show help message |
 
