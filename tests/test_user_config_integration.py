@@ -1,6 +1,5 @@
 """Integration tests for user config with LLM client."""
 
-import pytest
 from youtube_summariser.llm_client import LLMClient, load_config
 
 
@@ -31,10 +30,6 @@ anthropic:
         )
 
         # Also need to patch the import in llm_client
-        from youtube_summariser import config_manager
-
-        original_load = config_manager.load_user_config
-
         def patched_load():
             import yaml
 
@@ -89,8 +84,6 @@ anthropic:
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
-        from youtube_summariser import config_manager
-
         def patched_load():
             import yaml
 
@@ -120,8 +113,6 @@ anthropic:
   model: claude-sonnet-4-5-20250929
 """
         )
-
-        from youtube_summariser import config_manager
 
         def patched_load():
             import yaml

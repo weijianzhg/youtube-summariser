@@ -29,7 +29,8 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(config={"provider": "openai", "openai": {}, "anthropic": {}}, provider="openai")
+            config = {"provider": "openai", "openai": {}, "anthropic": {}}
+            LLMClient(config=config, provider="openai")
 
         error_msg = str(exc_info.value)
         assert "No API keys found" in error_msg
@@ -41,7 +42,8 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(config={"provider": "anthropic", "openai": {}, "anthropic": {}}, provider="anthropic")
+            config = {"provider": "anthropic", "openai": {}, "anthropic": {}}
+            LLMClient(config=config, provider="anthropic")
 
         error_msg = str(exc_info.value)
         assert "No API keys found" in error_msg
@@ -53,7 +55,8 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
 
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(config={"provider": "openai", "openai": {}, "anthropic": {}}, provider="openai")
+            config = {"provider": "openai", "openai": {}, "anthropic": {}}
+            LLMClient(config=config, provider="openai")
 
         error_msg = str(exc_info.value)
         assert "OpenAI API key not configured" in error_msg
@@ -66,7 +69,8 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(config={"provider": "anthropic", "openai": {}, "anthropic": {}}, provider="anthropic")
+            config = {"provider": "anthropic", "openai": {}, "anthropic": {}}
+            LLMClient(config=config, provider="anthropic")
 
         error_msg = str(exc_info.value)
         assert "Anthropic API key not configured" in error_msg
@@ -80,7 +84,8 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(config={"provider": "invalid_provider", "openai": {}, "anthropic": {}}, provider="invalid_provider")
+            config = {"provider": "invalid_provider", "openai": {}, "anthropic": {}}
+            LLMClient(config=config, provider="invalid_provider")
 
         assert "Unsupported provider" in str(exc_info.value)
 
@@ -90,7 +95,8 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
         # Should not raise - just tests initialization
-        client = LLMClient(config={"provider": "openai", "openai": {}, "anthropic": {}}, provider="openai")
+        config = {"provider": "openai", "openai": {}, "anthropic": {}}
+        client = LLMClient(config=config, provider="openai")
         assert client.provider == "openai"
         assert client._client is not None
 
@@ -100,6 +106,7 @@ class TestLLMClientAPIKeyValidation:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-12345")
 
         # Should not raise - just tests initialization
-        client = LLMClient(config={"provider": "anthropic", "openai": {}, "anthropic": {}}, provider="anthropic")
+        config = {"provider": "anthropic", "openai": {}, "anthropic": {}}
+        client = LLMClient(config=config, provider="anthropic")
         assert client.provider == "anthropic"
         assert client._client is not None

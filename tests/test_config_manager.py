@@ -1,8 +1,6 @@
 """Tests for config_manager module."""
 
 import sys
-
-import pytest
 from pathlib import Path
 
 from youtube_summariser.config_manager import (
