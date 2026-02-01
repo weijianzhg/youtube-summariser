@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-01
+
+### Added
+- **Interactive `init` command**: New `youtube-summariser init` subcommand for easy configuration
+  - Guided setup for API keys with secure masked input
+  - Select default provider (Anthropic or OpenAI)
+  - Configure model settings for each provider
+  - Option to set up both providers in one session
+- **User configuration file**: Settings stored in platform-appropriate location
+  - Windows: `%APPDATA%\youtube-summariser\config.yaml`
+  - macOS/Linux: `~/.youtube-summariser/config.yaml`
+  - API keys can now be stored in config instead of environment variables
+  - Config file takes priority over bundled defaults
+  - Environment variables still take priority over config file
+- **Subcommand CLI structure**: Commands now organized as subcommands
+  - `youtube-summariser init` - Interactive setup
+  - `youtube-summariser summarise <url>` - Summarize a video (with `summarize` alias)
+  - Backward compatible: `youtube-summariser <url>` still works
+
+### Changed
+- Improved error messages to suggest running `init` when API keys are missing
+- CLI now uses argparse subparsers for better organization
+
 ## [0.3.2] - 2026-01-07
 
 ### Changed

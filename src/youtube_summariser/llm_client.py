@@ -7,11 +7,24 @@ from typing import Iterator, Optional
 
 import yaml
 
+from .config_manager import load_user_config
+
 logger = logging.getLogger(__name__)
 
 
 def load_config() -> dict:
-    """Load configuration from bundled config.yaml."""
+    """
+    Load configuration with priority: user config > bundled config.
+
+    User config is loaded from ~/.youtube-summariser/config.yaml.
+    Falls back to bundled config.yaml if user config doesn't exist.
+    """
+    # Try user config first
+    user_config = load_user_config()
+    if user_config is not None:
+        return user_config
+
+    # Fall back to bundled config
     try:
         config_file = resources.files(__package__) / "config.yaml"
         with config_file.open("r") as f:
@@ -45,14 +58,19 @@ class LLMClient:
 
     def _init_client(self):
         """Initialize the appropriate client based on provider."""
-        openai_key = os.environ.get("OPENAI_API_KEY")
-        anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+        # API key priority: environment variable > user config
+        openai_key = os.environ.get("OPENAI_API_KEY") or self.config.get("openai", {}).get(
+            "api_key"
+        )
+        anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or self.config.get(
+            "anthropic", {}
+        ).get("api_key")
 
         # Check if neither key is available
         if not openai_key and not anthropic_key:
             raise ValueError(
-                "No API keys found. You need at least one of OPENAI_API_KEY "
-                "or ANTHROPIC_API_KEY environment variable to be set."
+                "No API keys found. Run 'youtube-summariser init' to configure, "
+                "or set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable."
             )
 
         if self.provider == "openai":
@@ -60,8 +78,9 @@ class LLMClient:
 
             if not openai_key:
                 raise ValueError(
-                    "OPENAI_API_KEY environment variable is not set. "
-                    "Use --provider anthropic to use your configured ANTHROPIC_API_KEY instead."
+                    "OpenAI API key not configured. "
+                    "Run 'youtube-summariser init' or set OPENAI_API_KEY environment variable. "
+                    "Or use --provider anthropic to use Anthropic instead."
                 )
             self._client = OpenAI(api_key=openai_key)
         elif self.provider == "anthropic":
@@ -69,8 +88,9 @@ class LLMClient:
 
             if not anthropic_key:
                 raise ValueError(
-                    "ANTHROPIC_API_KEY environment variable is not set. "
-                    "Use --provider openai to use your configured OPENAI_API_KEY instead."
+                    "Anthropic API key not configured. "
+                    "Run 'youtube-summariser init' or set ANTHROPIC_API_KEY environment variable. "
+                    "Or use --provider openai to use OpenAI instead."
                 )
             self._client = anthropic.Anthropic(api_key=anthropic_key)
         else:
