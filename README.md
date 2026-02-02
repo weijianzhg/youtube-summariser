@@ -75,7 +75,7 @@ youtube-summariser init
 youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Specify output filename
-youtube-summariser "https://youtu.be/VIDEO_ID" -o my_summary.txt
+youtube-summariser "https://youtu.be/VIDEO_ID" -o my_summary.md
 
 # Print to terminal only (no file saved)
 youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --no-save
@@ -97,7 +97,7 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 
 | Flag | Description |
 |------|-------------|
-| `-o, --output` | Specify output filename (default: `summary_<video_id>_<timestamp>.txt`) |
+| `-o, --output` | Specify output filename (default: `summary_<video_id>_<timestamp>.md`) |
 | `--no-save` | Print summary to terminal without saving to file |
 | `--provider` | LLM provider to use: `openai` or `anthropic` |
 | `--no-stream` | Disable streaming output |
@@ -106,13 +106,19 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 
 ### Output Format
 
-```
-YouTube Video Summary
-=====================
-Video URL: https://www.youtube.com/watch?v=VIDEO_ID
-Video ID: VIDEO_ID
-Generated: 2025-01-01 14:30:00
-Model: anthropic / claude-sonnet-4-5-20250929
+Summary files are saved as markdown (`.md`) with the following structure:
+
+```markdown
+# YouTube Video Summary
+
+| | |
+|---|---|
+| **Video URL** | <https://www.youtube.com/watch?v=VIDEO_ID> |
+| **Video ID** | `VIDEO_ID` |
+| **Generated** | 2025-01-01 14:30:00 |
+| **Model** | anthropic / claude-sonnet-4-5-20250929 |
+
+---
 
 ## Main Topics
 ...
