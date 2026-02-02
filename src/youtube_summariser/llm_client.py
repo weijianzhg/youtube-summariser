@@ -143,7 +143,10 @@ class LLMClient:
         elif self.provider == "anthropic":
             return self._chat_anthropic(system_prompt, user_message)
         elif self.provider == "openrouter":
-            return self._chat_openrouter(system_prompt, user_message)
+            raise NotImplementedError(
+                "Non-streaming mode is not supported for OpenRouter. "
+                "Please use streaming mode (remove --no-stream flag)."
+            )
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -216,18 +219,6 @@ class LLMClient:
         ) as stream:
             for text in stream.text_stream:
                 yield text
-
-    def _chat_openrouter(self, system_prompt: str, user_message: str) -> str:
-        """Send chat request to OpenRouter."""
-        response = self._client.chat.send(
-            model=self.get_model(),
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            max_tokens=self.get_max_tokens(),
-        )
-        return response.choices[0].message.content
 
     def _stream_chat_openrouter(self, system_prompt: str, user_message: str) -> Iterator[str]:
         """Send streaming chat request to OpenRouter."""
