@@ -105,15 +105,19 @@ def run_init() -> None:
 
     # Provider selection
     existing_provider = existing_config.get("provider", "anthropic")
-    provider_default = "1" if existing_provider == "anthropic" else "2"
+    provider_defaults = {"anthropic": "1", "openai": "2", "openrouter": "3"}
+    provider_default = provider_defaults.get(existing_provider, "1")
 
     print("Which LLM provider would you like to use by default?")
     print("  1. anthropic (Recommended)")
     print("  2. openai")
+    print("  3. openrouter (Access 300+ models)")
     selection = prompt_with_default("Select", provider_default)
 
     if selection == "2":
         provider = "openai"
+    elif selection == "3":
+        provider = "openrouter"
     else:
         provider = "anthropic"
 
@@ -122,6 +126,7 @@ def run_init() -> None:
         "provider": provider,
         "openai": existing_config.get("openai", {}).copy(),
         "anthropic": existing_config.get("anthropic", {}).copy(),
+        "openrouter": existing_config.get("openrouter", {}).copy(),
     }
 
     # Ensure max_tokens defaults exist
@@ -129,24 +134,21 @@ def run_init() -> None:
         config["openai"]["max_tokens"] = 3000
     if "max_tokens" not in config["anthropic"]:
         config["anthropic"]["max_tokens"] = 3000
+    if "max_tokens" not in config["openrouter"]:
+        config["openrouter"]["max_tokens"] = 3000
 
     print()
 
     # Configure primary provider first
     if provider == "anthropic":
         _configure_anthropic(config, existing_config)
-        print()
-        configure_other = prompt_with_default("Do you also want to configure OpenAI? (y/N)", "n")
-        if configure_other.lower() == "y":
-            print()
-            _configure_openai(config, existing_config)
-    else:
+        _ask_configure_others(config, existing_config, exclude=["anthropic"])
+    elif provider == "openai":
         _configure_openai(config, existing_config)
-        print()
-        configure_other = prompt_with_default("Do you also want to configure Anthropic? (y/N)", "n")
-        if configure_other.lower() == "y":
-            print()
-            _configure_anthropic(config, existing_config)
+        _ask_configure_others(config, existing_config, exclude=["openai"])
+    else:  # openrouter
+        _configure_openrouter(config, existing_config)
+        _ask_configure_others(config, existing_config, exclude=["openrouter"])
 
     # Save configuration
     save_user_config(config)
@@ -182,3 +184,43 @@ def _configure_openai(config: dict[str, Any], existing_config: dict[str, Any]) -
     if api_key:
         config["openai"]["api_key"] = api_key
     config["openai"]["model"] = model
+
+
+def _configure_openrouter(config: dict[str, Any], existing_config: dict[str, Any]) -> None:
+    """Configure OpenRouter settings."""
+    existing_openrouter = existing_config.get("openrouter", {})
+    existing_key = existing_openrouter.get("api_key", "")
+    existing_model = existing_openrouter.get("model", "anthropic/claude-sonnet-4.5")
+
+    print("OpenRouter provides access to 300+ models from various providers.")
+    print("Get your API key at: https://openrouter.ai/settings/keys")
+    print()
+    api_key = prompt_with_default("Enter your OpenRouter API key", existing_key, password=True)
+    print()
+    print("Model format: provider/model-name (e.g., anthropic/claude-sonnet-4.5)")
+    model = prompt_with_default("Model", existing_model)
+
+    if api_key:
+        config["openrouter"]["api_key"] = api_key
+    config["openrouter"]["model"] = model
+
+
+def _ask_configure_others(
+    config: dict[str, Any], existing_config: dict[str, Any], exclude: list[str]
+) -> None:
+    """Ask user if they want to configure other providers."""
+    providers = {
+        "openai": ("OpenAI", _configure_openai),
+        "anthropic": ("Anthropic", _configure_anthropic),
+        "openrouter": ("OpenRouter", _configure_openrouter),
+    }
+
+    for provider_key, (provider_name, configure_func) in providers.items():
+        if provider_key not in exclude:
+            print()
+            configure = prompt_with_default(
+                f"Do you also want to configure {provider_name}? (y/N)", "n"
+            )
+            if configure.lower() == "y":
+                print()
+                configure_func(config, existing_config)

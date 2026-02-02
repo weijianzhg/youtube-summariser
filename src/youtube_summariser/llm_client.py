@@ -1,4 +1,4 @@
-"""LLM Client abstraction for OpenAI and Anthropic."""
+"""LLM Client abstraction for OpenAI, Anthropic, and OpenRouter."""
 
 import logging
 import os
@@ -35,13 +35,14 @@ def load_config() -> dict:
             "provider": "openai",
             "openai": {"model": "gpt-5.2", "max_tokens": 3000},
             "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 3000},
+            "openrouter": {"model": "anthropic/claude-sonnet-4.5", "max_tokens": 3000},
         }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
 
 
 class LLMClient:
-    """Unified LLM client supporting OpenAI and Anthropic."""
+    """Unified LLM client supporting OpenAI, Anthropic, and OpenRouter."""
 
     def __init__(self, config: Optional[dict] = None, provider: Optional[str] = None):
         """
@@ -49,7 +50,7 @@ class LLMClient:
 
         Args:
             config: Optional configuration dict. If not provided, loads from config.yaml.
-            provider: Optional provider override ('openai' or 'anthropic').
+            provider: Optional provider override ('openai', 'anthropic', or 'openrouter').
         """
         self.config = config or load_config()
         self.provider = provider or self.config.get("provider", "openai")
@@ -65,12 +66,16 @@ class LLMClient:
         anthropic_key = os.environ.get("ANTHROPIC_API_KEY") or self.config.get("anthropic", {}).get(
             "api_key"
         )
+        openrouter_key = os.environ.get("OPENROUTER_API_KEY") or self.config.get(
+            "openrouter", {}
+        ).get("api_key")
 
-        # Check if neither key is available
-        if not openai_key and not anthropic_key:
+        # Check if no keys are available
+        if not openai_key and not anthropic_key and not openrouter_key:
             raise ValueError(
                 "No API keys found. Run 'youtube-summariser init' to configure, "
-                "or set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable."
+                "or set OPENAI_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY "
+                "environment variable."
             )
 
         if self.provider == "openai":
@@ -80,7 +85,7 @@ class LLMClient:
                 raise ValueError(
                     "OpenAI API key not configured. "
                     "Run 'youtube-summariser init' or set OPENAI_API_KEY environment variable. "
-                    "Or use --provider anthropic to use Anthropic instead."
+                    "Or use --provider anthropic or --provider openrouter instead."
                 )
             self._client = OpenAI(api_key=openai_key)
         elif self.provider == "anthropic":
@@ -90,16 +95,31 @@ class LLMClient:
                 raise ValueError(
                     "Anthropic API key not configured. "
                     "Run 'youtube-summariser init' or set ANTHROPIC_API_KEY environment variable. "
-                    "Or use --provider openai to use OpenAI instead."
+                    "Or use --provider openai or --provider openrouter instead."
                 )
             self._client = anthropic.Anthropic(api_key=anthropic_key)
+        elif self.provider == "openrouter":
+            from openrouter import OpenRouter
+
+            if not openrouter_key:
+                raise ValueError(
+                    "OpenRouter API key not configured. "
+                    "Run 'youtube-summariser init' or set OPENROUTER_API_KEY environment variable. "
+                    "Or use --provider openai or --provider anthropic instead."
+                )
+            self._client = OpenRouter(api_key=openrouter_key)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
     def get_model(self) -> str:
         """Get the model name for the current provider."""
         provider_config = self.config.get(self.provider, {})
-        default = "gpt-5.2" if self.provider == "openai" else "claude-sonnet-4-5-20250929"
+        defaults = {
+            "openai": "gpt-5.2",
+            "anthropic": "claude-sonnet-4-5-20250929",
+            "openrouter": "anthropic/claude-sonnet-4.5",
+        }
+        default = defaults.get(self.provider, "gpt-5.2")
         return provider_config.get("model", default)
 
     def get_max_tokens(self) -> int:
@@ -122,6 +142,8 @@ class LLMClient:
             return self._chat_openai(system_prompt, user_message)
         elif self.provider == "anthropic":
             return self._chat_anthropic(system_prompt, user_message)
+        elif self.provider == "openrouter":
+            return self._chat_openrouter(system_prompt, user_message)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -140,6 +162,8 @@ class LLMClient:
             yield from self._stream_chat_openai(system_prompt, user_message)
         elif self.provider == "anthropic":
             yield from self._stream_chat_anthropic(system_prompt, user_message)
+        elif self.provider == "openrouter":
+            yield from self._stream_chat_openrouter(system_prompt, user_message)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -192,3 +216,32 @@ class LLMClient:
         ) as stream:
             for text in stream.text_stream:
                 yield text
+
+    def _chat_openrouter(self, system_prompt: str, user_message: str) -> str:
+        """Send chat request to OpenRouter."""
+        response = self._client.chat.send(
+            model=self.get_model(),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=self.get_max_tokens(),
+        )
+        return response.choices[0].message.content
+
+    def _stream_chat_openrouter(self, system_prompt: str, user_message: str) -> Iterator[str]:
+        """Send streaming chat request to OpenRouter."""
+        stream = self._client.chat.send(
+            model=self.get_model(),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=self.get_max_tokens(),
+            stream=True,
+        )
+        for event in stream:
+            if event.choices and len(event.choices) > 0:
+                delta = event.choices[0].delta
+                if delta and delta.content:
+                    yield delta.content
