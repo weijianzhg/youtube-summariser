@@ -5,7 +5,7 @@ A command-line tool that extracts transcripts from YouTube videos
 and generates structured summaries using OpenAI or Anthropic models.
 """
 
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 __author__ = "Weijian Zhang"
 
 from .llm_client import LLMClient

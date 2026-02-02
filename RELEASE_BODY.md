@@ -1,51 +1,61 @@
-## 🚀 Latest AI Models Update
+## Interactive Configuration Setup
 
-This release updates to the **latest and most powerful AI models** from both OpenAI and Anthropic, bringing enhanced capabilities and performance improvements.
+This release introduces the `init` command for easy, guided configuration of your API keys and preferences.
 
-### ✨ What's New
+### What's New
 
-#### Updated AI Models
-- **OpenAI GPT-5.2**: Upgraded from GPT-4o to the latest GPT-5.2 (Thinking variant)
-  - Enhanced reasoning capabilities with new `xhigh` effort level
-  - Improved multimodal capabilities, especially in vision
-  - Better code generation for front-end UI
-  - Advanced tool calling and context management
+#### Interactive `init` Command
+Run `youtube-summariser init` to configure the tool interactively:
 
-- **Anthropic Claude Sonnet 4.5**: Upgraded from Claude Sonnet 4 to 4.5
-  - 1M token context window support
-  - Advanced tool use capabilities (beta)
-  - Improved code understanding and execution
+```
+$ youtube-summariser init
 
-#### Updated Dependencies
-- `openai>=1.60.0` (upgraded from 1.0.0)
-- `anthropic>=0.40.0` (upgraded from 0.18.0)
+YouTube Summariser Configuration
+==================================
 
-### 🔄 Migration
+Which LLM provider would you like to use by default?
+  1. anthropic (Recommended)
+  2. openai
+Select [1]: 1
 
-**No breaking changes!** All existing commands and configurations work exactly as before. The new models are drop-in replacements with enhanced capabilities.
+Enter your Anthropic API key: ********
+Model [claude-sonnet-4-5-20250929]:
 
-To use the new models, simply upgrade:
-```bash
-pip install --upgrade youtube-summariser
+Do you also want to configure OpenAI? (y/N): n
+
+Configuration saved to ~/.youtube-summariser/config.yaml
 ```
 
-Or if installed from source:
+#### User Configuration File
+- Settings stored in platform-appropriate location:
+  - **Windows**: `%APPDATA%\youtube-summariser\config.yaml`
+  - **macOS/Linux**: `~/.youtube-summariser/config.yaml`
+- API keys can be stored in the config file (no more juggling environment variables!)
+- Re-run `init` anytime to update your settings - existing values load as defaults
+
+#### Subcommand Structure
+The CLI now uses subcommands for better organization:
 ```bash
-pip install --upgrade openai anthropic
+youtube-summariser init                    # Interactive setup
+youtube-summariser <url>                   # Summarize (backward compatible)
+youtube-summariser summarise <url>         # Explicit subcommand
+youtube-summariser <url> --provider openai # Override provider
 ```
 
-### 📦 Requirements
+### Configuration Priority
+
+1. Environment variables (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`)
+2. User config file (`~/.youtube-summariser/config.yaml`)
+3. Bundled defaults
+
+### Migration
+
+**No breaking changes!** All existing commands work exactly as before. The `init` command is optional - you can continue using environment variables if you prefer.
+
+### Requirements
 
 - Python 3.10+
 - OpenAI SDK >= 1.60.0
 - Anthropic SDK >= 0.40.0
 
-### 🎯 Model Configuration
-
-The default models are now:
-- **OpenAI**: `gpt-5.2`
-- **Anthropic**: `claude-sonnet-4-5-20250929`
-
-You can customize the model by editing the `config.yaml` file in the package.
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed technical changes.
+See [CHANGELOG.md](CHANGELOG.md) for detailed changes.

@@ -4,10 +4,12 @@ Command-line interface for YouTube Video Summariser.
 
 Usage:
     youtube-summariser <youtube_url> [--output filename.txt]
+    youtube-summariser init
 
 Examples:
     youtube-summariser "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     youtube-summariser "https://youtu.be/dQw4w9WgXcQ" -o my_summary.txt
+    youtube-summariser init
 """
 
 import argparse
@@ -17,6 +19,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from . import __version__
+from .config_manager import run_init
 from .llm_client import LLMClient
 from .youtube_helper import YouTubeHelper
 
@@ -75,51 +78,16 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
 def generate_output_filename(video_id: str) -> str:
     """Generate a default output filename with timestamp."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"summary_{video_id}_{timestamp}.txt"
+    return f"summary_{video_id}_{timestamp}.md"
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        prog="youtube-summariser",
-        description="Summarize YouTube videos from the command line",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
-  youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.txt
-  youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" -o my_notes.txt
-        """,
-    )
-    parser.add_argument("url", nargs="?", help="YouTube video URL to summarize")
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="Output filename (default: summary_<video_id>_<timestamp>.txt)",
-        default=None,
-    )
-    parser.add_argument(
-        "--no-save", action="store_true", help="Print summary to stdout without saving to file"
-    )
-    parser.add_argument(
-        "--provider",
-        choices=["openai", "anthropic"],
-        help="LLM provider to use (overrides config.yaml)",
-        default=None,
-    )
-    parser.add_argument(
-        "--no-stream",
-        action="store_true",
-        help="Disable streaming output (wait for complete response before displaying)",
-    )
-    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
+def cmd_init(args):
+    """Handle the init subcommand."""
+    run_init()
 
-    args = parser.parse_args()
 
-    # Check if URL was provided
-    if not args.url:
-        parser.print_help()
-        sys.exit(0)
-
+def cmd_summarise(args):
+    """Handle the summarise subcommand (or direct URL usage)."""
     # Initialize LLM client
     try:
         llm = LLMClient(provider=args.provider)
@@ -129,7 +97,6 @@ Examples:
         sys.exit(1)
 
     # Validate URL
-
     if not YouTubeHelper.validate_url(args.url):
         print("Error: Invalid YouTube URL", file=sys.stderr)
         sys.exit(1)
@@ -158,13 +125,17 @@ Examples:
     if args.no_stream:
         print("Done.")
 
-    # Prepare output content for file saving
-    output_content = f"""YouTube Video Summary
-=====================
-Video URL: {args.url}
-Video ID: {video_id}
-Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-Model: {llm.provider} / {llm.get_model()}
+    # Prepare output content for file saving (markdown format)
+    output_content = f"""# YouTube Video Summary
+
+| | |
+|---|---|
+| **Video URL** | <{args.url}> |
+| **Video ID** | `{video_id}` |
+| **Generated** | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} |
+| **Model** | {llm.provider} / {llm.get_model()} |
+
+---
 
 {summary}
 """
@@ -173,7 +144,7 @@ Model: {llm.provider} / {llm.get_model()}
     if args.no_save:
         if args.no_stream:
             # Only print full formatted output if we haven't already streamed it
-            print("\n" + "=" * 50)
+            print("\n" + "-" * 50)
             print(output_content)
     else:
         output_file = args.output or generate_output_filename(video_id)
@@ -184,8 +155,83 @@ Model: {llm.provider} / {llm.get_model()}
         print(f"Saved to {output_file}")
         if args.no_stream:
             # Only print full formatted output if we haven't already streamed it
-            print("\n" + "=" * 50)
+            print("\n" + "-" * 50)
             print(output_content)
+
+
+def add_summarise_args(parser):
+    """Add common summarise arguments to a parser."""
+    parser.add_argument("url", help="YouTube video URL to summarize")
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output filename (default: summary_<video_id>_<timestamp>.md)",
+        default=None,
+    )
+    parser.add_argument(
+        "--no-save", action="store_true", help="Print summary to stdout without saving to file"
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["openai", "anthropic"],
+        help="LLM provider to use (overrides config)",
+        default=None,
+    )
+    parser.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming output (wait for complete response before displaying)",
+    )
+
+
+def is_url_like(arg: str) -> bool:
+    """Check if an argument looks like a URL."""
+    return arg.startswith(("http://", "https://", "www.", "youtube.com", "youtu.be"))
+
+
+def main():
+    # Handle backward compatibility: if first arg looks like a URL, prepend 'summarise'
+    if len(sys.argv) > 1 and is_url_like(sys.argv[1]):
+        sys.argv.insert(1, "summarise")
+
+    parser = argparse.ArgumentParser(
+        prog="youtube-summariser",
+        description="Summarize YouTube videos from the command line",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  youtube-summariser init
+  youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
+  youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.txt
+  youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+        """,
+    )
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
+
+    subparsers = parser.add_subparsers(dest="command", metavar="command")
+
+    # Init subcommand
+    init_parser = subparsers.add_parser(
+        "init", help="Configure API keys and default settings interactively"
+    )
+    init_parser.set_defaults(func=cmd_init)
+
+    # Summarise subcommand (explicit)
+    summarise_parser = subparsers.add_parser(
+        "summarise", help="Summarize a YouTube video", aliases=["summarize"]
+    )
+    add_summarise_args(summarise_parser)
+    summarise_parser.set_defaults(func=cmd_summarise)
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Execute the appropriate command
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
+        sys.exit(0)
 
 
 if __name__ == "__main__":
