@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Backward compatible: `youtube-summariser <url>` still works
 
 ### Changed
+- **Markdown output format**: Summary files now saved as `.md` with proper markdown formatting
+  - Metadata displayed in a clean table format
+  - Default filename changed from `.txt` to `.md`
 - Improved error messages to suggest running `init` when API keys are missing
 - CLI now uses argparse subparsers for better organization
 

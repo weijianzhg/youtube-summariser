@@ -78,7 +78,7 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
 def generate_output_filename(video_id: str) -> str:
     """Generate a default output filename with timestamp."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"summary_{video_id}_{timestamp}.txt"
+    return f"summary_{video_id}_{timestamp}.md"
 
 
 def cmd_init(args):
@@ -125,13 +125,17 @@ def cmd_summarise(args):
     if args.no_stream:
         print("Done.")
 
-    # Prepare output content for file saving
-    output_content = f"""YouTube Video Summary
-=====================
-Video URL: {args.url}
-Video ID: {video_id}
-Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-Model: {llm.provider} / {llm.get_model()}
+    # Prepare output content for file saving (markdown format)
+    output_content = f"""# YouTube Video Summary
+
+| | |
+|---|---|
+| **Video URL** | <{args.url}> |
+| **Video ID** | `{video_id}` |
+| **Generated** | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} |
+| **Model** | {llm.provider} / {llm.get_model()} |
+
+---
 
 {summary}
 """
@@ -140,7 +144,7 @@ Model: {llm.provider} / {llm.get_model()}
     if args.no_save:
         if args.no_stream:
             # Only print full formatted output if we haven't already streamed it
-            print("\n" + "=" * 50)
+            print("\n" + "-" * 50)
             print(output_content)
     else:
         output_file = args.output or generate_output_filename(video_id)
@@ -151,7 +155,7 @@ Model: {llm.provider} / {llm.get_model()}
         print(f"Saved to {output_file}")
         if args.no_stream:
             # Only print full formatted output if we haven't already streamed it
-            print("\n" + "=" * 50)
+            print("\n" + "-" * 50)
             print(output_content)
 
 
@@ -161,7 +165,7 @@ def add_summarise_args(parser):
     parser.add_argument(
         "-o",
         "--output",
-        help="Output filename (default: summary_<video_id>_<timestamp>.txt)",
+        help="Output filename (default: summary_<video_id>_<timestamp>.md)",
         default=None,
     )
     parser.add_argument(
