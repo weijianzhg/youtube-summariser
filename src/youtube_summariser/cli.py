@@ -8,7 +8,7 @@ Usage:
 
 Examples:
     youtube-summariser "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    youtube-summariser "https://youtu.be/dQw4w9WgXcQ" -o my_summary.txt
+    youtube-summariser "https://youtu.be/dQw4w9WgXcQ" -o my_summary.md
     youtube-summariser init
 """
 
@@ -202,7 +202,7 @@ def main():
 Examples:
   youtube-summariser init
   youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
-  youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.txt
+  youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.md
   youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --provider openai
         """,
     )
