@@ -3,12 +3,14 @@
 Command-line interface for YouTube Video Summariser.
 
 Usage:
-    youtube-summariser <youtube_url> [--output filename.txt]
+    youtube-summariser <youtube_url> [--output filename.md]
+    youtube-summariser search <query> [--first]
     youtube-summariser init
 
 Examples:
     youtube-summariser "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     youtube-summariser "https://youtu.be/dQw4w9WgXcQ" -o my_summary.md
+    youtube-summariser search "Python tutorial" --first
     youtube-summariser init
 """
 
@@ -297,6 +299,7 @@ Examples:
   youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
   youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.md
   youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+  youtube-summariser search "Python tutorial" --first
         """,
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
