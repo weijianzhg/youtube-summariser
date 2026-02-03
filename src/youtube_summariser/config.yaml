@@ -1,5 +1,5 @@
 # LLM Configuration
-# Supported providers: "openai" or "anthropic"
+# Supported providers: "openai", "anthropic", or "openrouter"
 provider: "anthropic"
 
 # Model settings per provider
@@ -9,5 +9,11 @@ openai:
 
 anthropic:
   model: "claude-sonnet-4-5-20250929"
+  max_tokens: 3000
+
+# OpenRouter provides access to 300+ models via a unified API
+# Model format: "provider/model-name" (e.g., "anthropic/claude-sonnet-4.5")
+openrouter:
+  model: "anthropic/claude-sonnet-4.5"
   max_tokens: 3000
 

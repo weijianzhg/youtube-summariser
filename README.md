@@ -1,6 +1,6 @@
 # YouTube Summariser
 
-A command-line tool that summarizes YouTube videos using AI. It extracts transcripts from YouTube videos and generates structured summaries using OpenAI or Anthropic models.
+A command-line tool that summarizes YouTube videos using AI. It extracts transcripts from YouTube videos and generates structured summaries using OpenAI, Anthropic, or OpenRouter (300+ models).
 
 ## Installation
 
@@ -25,9 +25,9 @@ youtube-summariser init
 ```
 
 This guides you through:
-- Selecting your default provider (Anthropic or OpenAI)
+- Selecting your default provider (Anthropic, OpenAI, or OpenRouter)
 - Entering your API key (securely masked)
-- Optionally configuring a secondary provider
+- Optionally configuring additional providers
 
 ## Configuration
 
@@ -51,6 +51,9 @@ export ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # For OpenAI
 export OPENAI_API_KEY=your_openai_api_key
+
+# For OpenRouter (access 300+ models)
+export OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
 Or create a `.env` file in your working directory.
@@ -82,6 +85,9 @@ youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --no-save
 
 # Use a specific provider
 youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
+
+# Use OpenRouter with access to 300+ models
+youtube-summariser "https://youtu.be/VIDEO_ID" --provider openrouter
 ```
 
 ### Commands
@@ -99,7 +105,7 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 |------|-------------|
 | `-o, --output` | Specify output filename (default: `summary_<video_id>_<timestamp>.md`) |
 | `--no-save` | Print summary to terminal without saving to file |
-| `--provider` | LLM provider to use: `openai` or `anthropic` |
+| `--provider` | LLM provider to use: `openai`, `anthropic`, or `openrouter` |
 | `--no-stream` | Disable streaming output |
 | `-v, --version` | Show version number |
 | `-h, --help` | Show help message |
@@ -139,7 +145,7 @@ Summary files are saved as markdown (`.md`) with the following structure:
 ## Requirements
 
 - Python 3.10+
-- An API key for OpenAI or Anthropic
+- An API key for OpenAI, Anthropic, or OpenRouter
 
 ## License
 

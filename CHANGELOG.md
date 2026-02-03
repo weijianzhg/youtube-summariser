@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-02
+
+### Added
+- **OpenRouter provider support**: Access 300+ AI models through a unified API
+  - Use `--provider openrouter` or set as default in config
+  - Models specified in `provider/model-name` format (e.g., `anthropic/claude-sonnet-4.5`)
+  - Full streaming support for real-time output
+  - Configure via `youtube-summariser init` or `OPENROUTER_API_KEY` environment variable
+- OpenRouter added as third option in interactive `init` command
+- New dependency: `openrouter>=0.1.0`
+
+### Changed
+- Updated error messages to suggest all three providers as alternatives
+- `init` command now offers to configure any combination of providers
+
 ## [0.4.0] - 2026-02-01
 
 ### Added

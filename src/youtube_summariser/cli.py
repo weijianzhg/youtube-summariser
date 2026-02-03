@@ -173,7 +173,7 @@ def add_summarise_args(parser):
     )
     parser.add_argument(
         "--provider",
-        choices=["openai", "anthropic"],
+        choices=["openai", "anthropic", "openrouter"],
         help="LLM provider to use (overrides config)",
         default=None,
     )
