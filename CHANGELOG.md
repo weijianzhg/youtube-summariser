@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-02-03
+
+### Added
+- **Search by title**: New `search` command to find and summarize YouTube videos without needing the URL
+  - `youtube-summariser search "video title"` - Interactive selection from search results
+  - `--first` / `-1` flag to auto-select the first result
+  - `--max-results` option to control number of results displayed (default: 5)
+  - Shows video title, channel, and duration for each result
+- New dependency: `pytubefix>=8.0.0` for YouTube search (no API key required)
+
+### Changed
+- Refactored CLI to share video processing logic between `summarise` and `search` commands
+
 ## [0.5.0] - 2026-02-02
 
 ### Added
