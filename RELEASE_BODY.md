@@ -1,61 +1,72 @@
-## OpenRouter Support - Access 300+ AI Models
+## Search by Title - No URL Required
 
-This release adds OpenRouter as a third LLM provider, giving you access to 300+ AI models through a single unified API.
+This release adds the ability to search for YouTube videos by title, so you no longer need to copy/paste URLs.
 
 ### What's New
 
-#### OpenRouter Provider
-Use `--provider openrouter` to access models from OpenAI, Anthropic, Meta, Google, Mistral, and many more:
+#### Search Command
+Use `youtube-summariser search` to find and summarize videos by title:
 
 ```bash
-# Set your API key
-export OPENROUTER_API_KEY=sk-or-v1-xxxx
+# Interactive selection (shows top 5 results)
+youtube-summariser search "How to make pasta"
 
-# Summarize with OpenRouter
-youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --provider openrouter
+# Output:
+# Found 5 video(s):
+#
+#   1. How to Make Fresh Pasta | Basics with Babish
+#      Channel: Babish Culinary Universe | Duration: 12:34
+#
+#   2. Gordon Ramsay's Ultimate Guide to Pasta
+#      Channel: Gordon Ramsay | Duration: 18:45
+#   ...
+#
+# Select video (1-5): 1
 ```
 
-Or configure it as your default provider:
+#### Auto-Select First Result
+Skip the selection prompt with `--first`:
 
-```
-$ youtube-summariser init
-
-YouTube Summariser Configuration
-==================================
-
-Which LLM provider would you like to use by default?
-  1. anthropic (Recommended)
-  2. openai
-  3. openrouter (Access 300+ models)
-Select [1]: 3
-
-OpenRouter provides access to 300+ models from various providers.
-Get your API key at: https://openrouter.ai/settings/keys
-
-Enter your OpenRouter API key: ********
-Model format: provider/model-name (e.g., anthropic/claude-sonnet-4.5)
-Model [anthropic/claude-sonnet-4.5]:
-
-Configuration saved to ~/.youtube-summariser/config.yaml
+```bash
+youtube-summariser search "Python tutorial for beginners" --first
 ```
 
-#### Why OpenRouter?
-- **300+ models**: Access models from multiple providers with one API key
-- **Pay-per-use**: No subscriptions required
-- **Model flexibility**: Easily switch between models like `anthropic/claude-sonnet-4.5`, `openai/gpt-4o`, `google/gemini-pro`, etc.
-- **Full streaming support**: Real-time output just like native providers
+#### Control Results Count
+Show more or fewer results with `--max-results`:
 
-### Configuration Priority
+```bash
+youtube-summariser search "cooking recipes" --max-results 10
+```
 
-1. Environment variables (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`)
-2. User config file (`~/.youtube-summariser/config.yaml`)
-3. Bundled defaults
+### Why Search?
+- **No URL copying**: Just type what you're looking for
+- **No API key needed**: Uses pytubefix library (scraping-based)
+- **Interactive selection**: See title, channel, and duration before choosing
+- **Works with all providers**: Combine with `--provider openai/anthropic/openrouter`
+
+### Full Example
+
+```bash
+$ youtube-summariser search "machine learning explained" --first --provider anthropic
+
+Using anthropic/claude-sonnet-4-5-20250929
+Searching YouTube for: machine learning explained
+Auto-selecting: Machine Learning Explained in 100 Seconds
+
+Selected: Machine Learning Explained in 100 Seconds
+URL: https://www.youtube.com/watch?v=...
+
+Fetching transcript for ...
+Transcript: 1842 characters
+Generating summary...
+
+--- Summary ---
+...
+```
 
 ### Requirements
 
 - Python 3.10+
-- OpenAI SDK >= 1.60.0
-- Anthropic SDK >= 0.40.0
-- OpenRouter SDK >= 0.1.0
+- pytubefix >= 8.0.0 (new dependency, no API key required)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed changes.

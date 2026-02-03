@@ -90,12 +90,28 @@ youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
 youtube-summariser "https://youtu.be/VIDEO_ID" --provider openrouter
 ```
 
+### Search by Title
+
+Don't have a URL? Search for videos by title:
+
+```bash
+# Interactive selection (shows top 5 results)
+youtube-summariser search "How to make mass"
+
+# Auto-select first result
+youtube-summariser search "Python tutorial" --first
+
+# Show more results
+youtube-summariser search "cooking recipes" --max-results 10
+```
+
 ### Commands
 
 | Command | Description |
 |---------|-------------|
 | `init` | Interactive setup for API keys and preferences |
 | `summarise` | Summarize a YouTube video (also aliased as `summarize`) |
+| `search` | Search YouTube by title and summarize |
 
 You can also pass a URL directly without the `summarise` subcommand for convenience.
 
@@ -107,6 +123,8 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 | `--no-save` | Print summary to terminal without saving to file |
 | `--provider` | LLM provider to use: `openai`, `anthropic`, or `openrouter` |
 | `--no-stream` | Disable streaming output |
+| `--first, -1` | Auto-select first search result (search command only) |
+| `--max-results` | Number of search results to display (default: 5) |
 | `-v, --version` | Show version number |
 | `-h, --help` | Show help message |
 
