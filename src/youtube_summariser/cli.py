@@ -86,9 +86,23 @@ def cmd_init(args):
     run_init()
 
 
-def cmd_summarise(args):
-    """Handle the summarise subcommand (or direct URL usage)."""
-    # Initialize LLM client
+def format_duration(seconds: str) -> str:
+    """Convert duration in seconds to human-readable MM:SS or HH:MM:SS format."""
+    try:
+        total_seconds = int(seconds)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        secs = total_seconds % 60
+        if hours > 0:
+            return f"{hours}:{minutes:02d}:{secs:02d}"
+        return f"{minutes}:{secs:02d}"
+    except (ValueError, TypeError):
+        return "??:??"
+
+
+def cmd_search(args):
+    """Handle the search subcommand."""
+    # Initialize LLM client first
     try:
         llm = LLMClient(provider=args.provider)
         print(f"Using {llm.provider}/{llm.get_model()}")
@@ -96,17 +110,72 @@ def cmd_summarise(args):
         print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
-    # Validate URL
-    if not YouTubeHelper.validate_url(args.url):
-        print("Error: Invalid YouTube URL", file=sys.stderr)
+    # Search for videos
+    print(f"Searching YouTube for: {args.query}")
+    try:
+        results = YouTubeHelper.search_videos(args.query, max_results=args.max_results)
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
-    # Extract video ID
-    video_id = YouTubeHelper.extract_video_id(args.url)
-    if not video_id:
-        print("Error: Could not extract video ID from URL", file=sys.stderr)
+    if not results:
+        print("No videos found matching your query.", file=sys.stderr)
         sys.exit(1)
 
+    # Select video
+    if args.first:
+        # Auto-select first result
+        selected = results[0]
+        print(f"Auto-selecting: {selected['title']}")
+    else:
+        # Display results and let user pick
+        print(f"\nFound {len(results)} video(s):\n")
+        for i, video in enumerate(results, 1):
+            duration = format_duration(video["duration"])
+            print(f"  {i}. {video['title']}")
+            print(f"     Channel: {video['channel']} | Duration: {duration}")
+            print()
+
+        # Prompt user for selection
+        while True:
+            try:
+                choice = input(f"Select video (1-{len(results)}): ").strip()
+                if not choice:
+                    print("Cancelled.")
+                    sys.exit(0)
+                idx = int(choice) - 1
+                if 0 <= idx < len(results):
+                    selected = results[idx]
+                    break
+                print(f"Please enter a number between 1 and {len(results)}")
+            except ValueError:
+                print("Please enter a valid number")
+            except (KeyboardInterrupt, EOFError):
+                print("\nCancelled.")
+                sys.exit(0)
+
+    print(f"\nSelected: {selected['title']}")
+    print(f"URL: {selected['url']}\n")
+
+    # Process the selected video
+    process_video(selected["video_id"], selected["url"], args, llm)
+
+
+def process_video(
+    video_id: str,
+    video_url: str,
+    args,
+    llm: LLMClient,
+) -> None:
+    """
+    Shared logic for processing a video: fetch transcript, summarize, and save.
+
+    Args:
+        video_id: YouTube video ID
+        video_url: Full YouTube URL
+        args: Parsed CLI arguments (must have output, no_save, no_stream attributes)
+        llm: Initialized LLM client
+    """
     print(f"Fetching transcript for {video_id}...")
     try:
         transcript = YouTubeHelper.get_transcript(video_id)
@@ -130,7 +199,7 @@ def cmd_summarise(args):
 
 | | |
 |---|---|
-| **Video URL** | <{args.url}> |
+| **Video URL** | <{video_url}> |
 | **Video ID** | `{video_id}` |
 | **Generated** | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} |
 | **Model** | {llm.provider} / {llm.get_model()} |
@@ -157,6 +226,30 @@ def cmd_summarise(args):
             # Only print full formatted output if we haven't already streamed it
             print("\n" + "-" * 50)
             print(output_content)
+
+
+def cmd_summarise(args):
+    """Handle the summarise subcommand (or direct URL usage)."""
+    # Initialize LLM client
+    try:
+        llm = LLMClient(provider=args.provider)
+        print(f"Using {llm.provider}/{llm.get_model()}")
+    except ValueError as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+    # Validate URL
+    if not YouTubeHelper.validate_url(args.url):
+        print("Error: Invalid YouTube URL", file=sys.stderr)
+        sys.exit(1)
+
+    # Extract video ID
+    video_id = YouTubeHelper.extract_video_id(args.url)
+    if not video_id:
+        print("Error: Could not extract video ID from URL", file=sys.stderr)
+        sys.exit(1)
+
+    process_video(video_id, args.url, args, llm)
 
 
 def add_summarise_args(parser):
@@ -222,6 +315,45 @@ Examples:
     )
     add_summarise_args(summarise_parser)
     summarise_parser.set_defaults(func=cmd_summarise)
+
+    # Search subcommand
+    search_parser = subparsers.add_parser("search", help="Search YouTube by title and summarize")
+    search_parser.add_argument("query", help="Search query (video title or keywords)")
+    search_parser.add_argument(
+        "--first",
+        "-1",
+        action="store_true",
+        help="Auto-select first search result without prompting",
+    )
+    search_parser.add_argument(
+        "--max-results",
+        type=int,
+        default=5,
+        help="Number of search results to display (default: 5)",
+    )
+    search_parser.add_argument(
+        "-o",
+        "--output",
+        help="Output filename (default: summary_<video_id>_<timestamp>.md)",
+        default=None,
+    )
+    search_parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="Print summary to stdout without saving to file",
+    )
+    search_parser.add_argument(
+        "--provider",
+        choices=["openai", "anthropic", "openrouter"],
+        help="LLM provider to use (overrides config)",
+        default=None,
+    )
+    search_parser.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming output (wait for complete response before displaying)",
+    )
+    search_parser.set_defaults(func=cmd_search)
 
     # Parse arguments
     args = parser.parse_args()

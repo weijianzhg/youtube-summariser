@@ -136,3 +136,49 @@ class YouTubeHelper:
         except Exception as e:
             logger.error(f"Error getting available transcripts for video {video_id}: {str(e)}")
             raise Exception("Failed to get available transcripts")
+
+    @staticmethod
+    def search_videos(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+        """
+        Search YouTube for videos matching query.
+
+        Args:
+            query: Search query (video title or keywords)
+            max_results: Maximum number of results to return (default: 5)
+
+        Returns:
+            List of dictionaries containing video metadata:
+            - video_id: YouTube video ID
+            - title: Video title
+            - url: Full watch URL
+            - duration: Video duration in seconds
+            - channel: Channel/author name
+
+        Raises:
+            Exception: If search fails
+        """
+        from pytubefix import Search
+
+        try:
+            if not query or not query.strip():
+                raise ValueError("Search query cannot be empty")
+
+            s = Search(query)
+            results = []
+            for video in s.videos[:max_results]:
+                results.append(
+                    {
+                        "video_id": video.video_id,
+                        "title": video.title,
+                        "url": video.watch_url,
+                        "duration": str(video.length) if video.length else "0",
+                        "channel": video.author or "Unknown",
+                    }
+                )
+            return results
+
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error searching YouTube for '{query}': {str(e)}")
+            raise Exception(f"Failed to search YouTube: {str(e)}")

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "youtube-summariser"
-version = "0.5.0"
+version = "0.6.0"
 description = "Summarize YouTube videos using AI (OpenAI, Anthropic, or OpenRouter)"
 readme = "README.md"
 license = "MIT"
@@ -47,6 +47,7 @@ dependencies = [
     "pyyaml>=6.0",
     "python-dotenv>=1.0.0",
     "youtube-transcript-api>=1.0.0",
+    "pytubefix>=8.0.0",
 ]
 
 [project.optional-dependencies]
