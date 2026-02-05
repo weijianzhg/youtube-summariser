@@ -2,16 +2,18 @@
 """
 Command-line interface for YouTube Video Summariser.
 
+Both 'youtube-summariser' (British) and 'youtube-summarizer' (American) work.
+
 Usage:
-    youtube-summariser <youtube_url> [--output filename.md]
-    youtube-summariser search <query> [--first]
-    youtube-summariser init
+    youtube-summarizer <youtube_url> [--output filename.md]
+    youtube-summarizer search <query> [--first]
+    youtube-summarizer init
 
 Examples:
-    youtube-summariser "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    youtube-summariser "https://youtu.be/dQw4w9WgXcQ" -o my_summary.md
-    youtube-summariser search "Python tutorial" --first
-    youtube-summariser init
+    youtube-summarizer "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    youtube-summarizer "https://youtu.be/dQw4w9WgXcQ" -o my_summary.md
+    youtube-summarizer search "Python tutorial" --first
+    youtube-summarizer init
 """
 
 import argparse
@@ -290,16 +292,16 @@ def main():
         sys.argv.insert(1, "summarise")
 
     parser = argparse.ArgumentParser(
-        prog="youtube-summariser",
+        prog="youtube-summarizer",
         description="Summarize YouTube videos from the command line",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  youtube-summariser init
-  youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
-  youtube-summariser "https://youtu.be/VIDEO_ID" --output summary.md
-  youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --provider openai
-  youtube-summariser search "Python tutorial" --first
+  youtube-summarizer init
+  youtube-summarizer "https://www.youtube.com/watch?v=VIDEO_ID"
+  youtube-summarizer "https://youtu.be/VIDEO_ID" --output summary.md
+  youtube-summarizer "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+  youtube-summarizer search "Python tutorial" --first
         """,
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")

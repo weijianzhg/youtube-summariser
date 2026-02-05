@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "youtube-summariser"
-version = "0.6.0"
+version = "0.6.1"
 description = "Summarize YouTube videos using AI (OpenAI, Anthropic, or OpenRouter)"
 readme = "README.md"
 license = "MIT"
@@ -59,6 +59,7 @@ dev = [
 
 [project.scripts]
 youtube-summariser = "youtube_summariser.cli:main"
+youtube-summarizer = "youtube_summariser.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/weijianzhg/youtube-summariser"
