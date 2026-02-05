@@ -8,6 +8,8 @@ A command-line tool that summarizes YouTube videos using AI. It extracts transcr
 pip install youtube-summariser
 ```
 
+> **Note:** Both `youtube-summariser` (British) and `youtube-summarizer` (American) commands are available - use whichever you prefer!
+
 Or install from source:
 
 ```bash

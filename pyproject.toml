@@ -59,6 +59,7 @@ dev = [
 
 [project.scripts]
 youtube-summariser = "youtube_summariser.cli:main"
+youtube-summarizer = "youtube_summariser.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/weijianzhg/youtube-summariser"
