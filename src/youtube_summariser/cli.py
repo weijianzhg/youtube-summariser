@@ -293,7 +293,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         prog="youtube-summarizer",
-        description="Summarize YouTube videos from the command line (works as youtube-summariser or youtube-summarizer)",
+        description="Summarize YouTube videos from the command line",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
