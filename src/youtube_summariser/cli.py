@@ -77,9 +77,42 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
         return llm.chat(SYSTEM_PROMPT, transcript)
 
 
-def generate_output_filename(video_id: str) -> str:
-    """Generate a default output filename with timestamp."""
+def slugify_title(title: str, max_length: int = 50) -> str:
+    """
+    Convert a video title to a filename-safe slug.
+
+    Args:
+        title: The video title
+        max_length: Maximum length of the slug (default: 50)
+
+    Returns:
+        A lowercase, hyphen-separated slug safe for filenames
+    """
+    import re
+
+    # Convert to lowercase
+    slug = title.lower()
+    # Replace spaces and underscores with hyphens
+    slug = re.sub(r"[\s_]+", "-", slug)
+    # Remove any character that isn't alphanumeric or hyphen
+    slug = re.sub(r"[^a-z0-9-]", "", slug)
+    # Collapse multiple hyphens
+    slug = re.sub(r"-+", "-", slug)
+    # Strip leading/trailing hyphens
+    slug = slug.strip("-")
+    # Truncate to max length (at word boundary if possible)
+    if len(slug) > max_length:
+        slug = slug[:max_length].rsplit("-", 1)[0]
+    return slug
+
+
+def generate_output_filename(video_id: str, title: str | None = None) -> str:
+    """Generate a default output filename with video title and timestamp."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if title:
+        slug = slugify_title(title)
+        if slug:
+            return f"summary_{slug}_{timestamp}.md"
     return f"summary_{video_id}_{timestamp}.md"
 
 
@@ -159,8 +192,8 @@ def cmd_search(args):
     print(f"\nSelected: {selected['title']}")
     print(f"URL: {selected['url']}\n")
 
-    # Process the selected video
-    process_video(selected["video_id"], selected["url"], args, llm)
+    # Process the selected video (pass title to avoid re-fetching)
+    process_video(selected["video_id"], selected["url"], args, llm, title=selected["title"])
 
 
 def process_video(
@@ -168,6 +201,7 @@ def process_video(
     video_url: str,
     args,
     llm: LLMClient,
+    title: str | None = None,
 ) -> None:
     """
     Shared logic for processing a video: fetch transcript, summarize, and save.
@@ -177,7 +211,12 @@ def process_video(
         video_url: Full YouTube URL
         args: Parsed CLI arguments (must have output, no_save, no_stream attributes)
         llm: Initialized LLM client
+        title: Optional video title (fetched automatically if not provided)
     """
+    # Fetch title if not provided (for filename generation)
+    if title is None and not args.output and not args.no_save:
+        title = YouTubeHelper.get_video_title(video_id)
+
     print(f"Fetching transcript for {video_id}...")
     try:
         transcript = YouTubeHelper.get_transcript(video_id)
@@ -218,7 +257,7 @@ def process_video(
             print("\n" + "-" * 50)
             print(output_content)
     else:
-        output_file = args.output or generate_output_filename(video_id)
+        output_file = args.output or generate_output_filename(video_id, title)
 
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(output_content)

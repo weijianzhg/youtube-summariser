@@ -138,6 +138,27 @@ class YouTubeHelper:
             raise Exception("Failed to get available transcripts")
 
     @staticmethod
+    def get_video_title(video_id: str) -> Optional[str]:
+        """
+        Get the title of a YouTube video.
+
+        Args:
+            video_id: YouTube video ID
+
+        Returns:
+            Video title, or None if it cannot be retrieved
+        """
+        from pytubefix import YouTube
+
+        try:
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            yt = YouTube(url)
+            return yt.title
+        except Exception as e:
+            logger.warning(f"Could not get video title for {video_id}: {str(e)}")
+            return None
+
+    @staticmethod
     def search_videos(query: str, max_results: int = 5) -> List[Dict[str, str]]:
         """
         Search YouTube for videos matching query.
