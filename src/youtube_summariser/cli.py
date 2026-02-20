@@ -10,8 +10,8 @@ Usage:
     youtube-summarizer init
 
 Examples:
-    youtube-summarizer "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-    youtube-summarizer "https://youtu.be/dQw4w9WgXcQ" -o my_summary.md
+    youtube-summarizer https://www.youtube.com/watch?v=dQw4w9WgXcQ
+    youtube-summarizer https://youtu.be/dQw4w9WgXcQ -o my_summary.md
     youtube-summarizer search "Python tutorial" --first
     youtube-summarizer init
 """
@@ -286,7 +286,53 @@ def is_url_like(arg: str) -> bool:
     return arg.startswith(("http://", "https://", "www.", "youtube.com", "youtu.be"))
 
 
+def reassemble_url_args(argv: list[str]) -> list[str]:
+    """
+    Reassemble URL fragments that the shell may have split at '&' or '?'.
+
+    When a user types an unquoted YouTube URL like:
+        youtube-summariser https://www.youtube.com/watch?v=ID&t=30
+    some shells split on '&', turning it into multiple arguments. This function
+    detects and rejoins them into a single URL argument.
+    """
+    if len(argv) < 2:
+        return argv
+
+    # Skip the program name (argv[0])
+    # Check if any arg (after skipping known subcommands) looks like a URL start
+    result = [argv[0]]
+    i = 1
+
+    # Skip known subcommands
+    known_commands = {"summarise", "summarize", "search", "init"}
+    if argv[i] in known_commands:
+        result.append(argv[i])
+        i += 1
+
+    if i < len(argv) and is_url_like(argv[i]):
+        # Collect this and any following args that look like URL query fragments
+        # (e.g. "v=abc123" or "t=30" that were split off by the shell on '&' or '?')
+        url_parts = [argv[i]]
+        i += 1
+        while i < len(argv) and "=" in argv[i] and not argv[i].startswith("-"):
+            url_parts.append(argv[i])
+            i += 1
+
+        if len(url_parts) > 1:
+            # Rejoin with '&' — they were split on '&' by the shell
+            result.append("&".join(url_parts))
+        else:
+            result.append(url_parts[0])
+
+    # Append remaining args unchanged
+    result.extend(argv[i:])
+    return result
+
+
 def main():
+    # Reassemble URL fragments the shell may have split on '&' (unquoted URLs)
+    sys.argv = reassemble_url_args(sys.argv)
+
     # Handle backward compatibility: if first arg looks like a URL, prepend 'summarise'
     if len(sys.argv) > 1 and is_url_like(sys.argv[1]):
         sys.argv.insert(1, "summarise")
@@ -298,9 +344,9 @@ def main():
         epilog="""
 Examples:
   youtube-summarizer init
-  youtube-summarizer "https://www.youtube.com/watch?v=VIDEO_ID"
-  youtube-summarizer "https://youtu.be/VIDEO_ID" --output summary.md
-  youtube-summarizer "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+  youtube-summarizer https://www.youtube.com/watch?v=VIDEO_ID
+  youtube-summarizer https://youtu.be/VIDEO_ID --output summary.md
+  youtube-summarizer https://youtube.com/watch?v=VIDEO_ID --provider openai
   youtube-summarizer search "Python tutorial" --first
         """,
     )

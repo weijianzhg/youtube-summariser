@@ -8,7 +8,9 @@ A command-line tool that summarizes YouTube videos using AI. It extracts transcr
 pip install youtube-summariser
 ```
 
-> **Note:** Both `youtube-summariser` (British) and `youtube-summarizer` (American) commands are available - use whichever you prefer!
+> **Note:** Multiple command aliases are available:
+> - `youtube-summariser` / `youtube-summarizer` (full name, British/American)
+> - `yt-summarise` / `yt-summarize` (shorter aliases)
 
 Or install from source:
 
@@ -76,20 +78,23 @@ The default provider is **Anthropic**. You can change this via `init` or overrid
 # Interactive configuration
 youtube-summariser init
 
-# Summarize a video (saves to auto-generated filename)
-youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
+# Summarize a video (saves to auto-generated filename) — quotes are optional
+youtube-summariser https://www.youtube.com/watch?v=VIDEO_ID
+
+# Short alias works too
+yt-summarise https://youtu.be/VIDEO_ID
 
 # Specify output filename
-youtube-summariser "https://youtu.be/VIDEO_ID" -o my_summary.md
+yt-summarise https://youtu.be/VIDEO_ID -o my_summary.md
 
 # Print to terminal only (no file saved)
-youtube-summariser "https://youtube.com/watch?v=VIDEO_ID" --no-save
+yt-summarise https://youtube.com/watch?v=VIDEO_ID --no-save
 
 # Use a specific provider
-youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
+yt-summarise https://youtu.be/VIDEO_ID --provider openai
 
 # Use OpenRouter with access to 300+ models
-youtube-summariser "https://youtu.be/VIDEO_ID" --provider openrouter
+yt-summarise https://youtu.be/VIDEO_ID --provider openrouter
 ```
 
 ### Search by Title
@@ -115,7 +120,7 @@ youtube-summariser search "cooking recipes" --max-results 10
 | `summarise` | Summarize a YouTube video (also aliased as `summarize`) |
 | `search` | Search YouTube by title and summarize |
 
-You can also pass a URL directly without the `summarise` subcommand for convenience.
+You can also pass a URL directly without the `summarise` subcommand for convenience. Quotes around the URL are optional.
 
 ### Options
 
