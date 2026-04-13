@@ -181,3 +181,30 @@ class TestYouTubeHelperValidateUrl:
         """Should return False for YouTube URLs without video ID."""
         assert not YouTubeHelper.validate_url("https://www.youtube.com/")
         assert not YouTubeHelper.validate_url("https://www.youtube.com/feed")
+
+
+class TestYouTubeHelperVideoTitle:
+    """Test fetching video title metadata."""
+
+    def test_get_video_title_returns_title(self):
+        """Should return video title when lookup succeeds."""
+        mock_video = MagicMock()
+        mock_video.title = "Test Title"
+
+        with patch("pytubefix.YouTube", return_value=mock_video):
+            title = YouTubeHelper.get_video_title("abc123")
+
+        assert title == "Test Title"
+
+    def test_get_video_title_empty_video_id_raises_error(self):
+        """Should raise ValueError for empty video IDs."""
+        with pytest.raises(ValueError):
+            YouTubeHelper.get_video_title("  ")
+
+    def test_get_video_title_wraps_lookup_errors(self):
+        """Should wrap provider errors with a user-friendly message."""
+        with patch("pytubefix.YouTube", side_effect=Exception("network")):
+            with pytest.raises(Exception) as exc_info:
+                YouTubeHelper.get_video_title("abc123")
+
+        assert "Failed to get video title" in str(exc_info.value)

@@ -18,8 +18,10 @@ Examples:
 
 import argparse
 import os
+import re
 import sys
 from datetime import datetime
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -80,10 +82,20 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
         return llm.chat(SYSTEM_PROMPT, transcript)
 
 
-def generate_output_filename(video_id: str) -> str:
-    """Generate a default output filename with timestamp."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"summary_{video_id}_{timestamp}.md"
+def slugify_filename_component(value: str, max_length: int = 80) -> str:
+    """Convert text into a filesystem-safe slug for filenames."""
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    slug = re.sub(r"-{2,}", "-", slug)
+    return slug[:max_length].rstrip("-")
+
+
+def generate_output_filename(video_id: str, video_title: Optional[str] = None) -> str:
+    """Generate a default date-first output filename."""
+    date_prefix = datetime.now().strftime("%Y-%m-%d")
+    title_slug = slugify_filename_component(video_title or "")
+    if title_slug:
+        return f"{date_prefix}__{title_slug}__{video_id}.md"
+    return f"{date_prefix}__video-{video_id}.md"
 
 
 def cmd_init(args):
@@ -163,12 +175,13 @@ def cmd_search(args):
     print(f"URL: {selected['url']}\n")
 
     # Process the selected video
-    process_video(selected["video_id"], selected["url"], args, llm)
+    process_video(selected["video_id"], selected["url"], selected.get("title"), args, llm)
 
 
 def process_video(
     video_id: str,
     video_url: str,
+    video_title: Optional[str],
     args,
     llm: LLMClient,
 ) -> None:
@@ -178,6 +191,7 @@ def process_video(
     Args:
         video_id: YouTube video ID
         video_url: Full YouTube URL
+        video_title: Optional video title for filename generation
         args: Parsed CLI arguments (must have output, no_save, no_stream attributes)
         llm: Initialized LLM client
     """
@@ -221,7 +235,7 @@ def process_video(
             print("\n" + "-" * 50)
             print(output_content)
     else:
-        output_file = args.output or generate_output_filename(video_id)
+        output_file = args.output or generate_output_filename(video_id, video_title)
 
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(output_content)
@@ -254,7 +268,14 @@ def cmd_summarise(args):
         print("Error: Could not extract video ID from URL", file=sys.stderr)
         sys.exit(1)
 
-    process_video(video_id, args.url, args, llm)
+    video_title = None
+    try:
+        video_title = YouTubeHelper.get_video_title(video_id)
+    except Exception:
+        # Title lookup is non-critical; filename fallback still includes video ID.
+        video_title = None
+
+    process_video(video_id, args.url, video_title, args, llm)
 
 
 def add_summarise_args(parser):
@@ -263,7 +284,7 @@ def add_summarise_args(parser):
     parser.add_argument(
         "-o",
         "--output",
-        help="Output filename (default: summary_<video_id>_<timestamp>.md)",
+        help="Output filename (default: YYYY-MM-DD__video-title-slug__video-id.md)",
         default=None,
     )
     parser.add_argument(
@@ -342,7 +363,7 @@ Examples:
     search_parser.add_argument(
         "-o",
         "--output",
-        help="Output filename (default: summary_<video_id>_<timestamp>.md)",
+        help="Output filename (default: YYYY-MM-DD__video-title-slug__video-id.md)",
         default=None,
     )
     search_parser.add_argument(

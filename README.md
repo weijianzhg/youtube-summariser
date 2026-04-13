@@ -27,6 +27,7 @@ youtube-summariser init
 ```
 
 This guides you through:
+
 - Selecting your default provider (Anthropic, OpenAI, or OpenRouter)
 - Entering your API key (securely masked)
 - Optionally configuring additional providers
@@ -40,6 +41,7 @@ youtube-summariser init
 ```
 
 Settings are saved to a platform-appropriate location:
+
 - **macOS/Linux**: `~/.youtube-summariser/config.yaml`
 - **Windows**: `%APPDATA%\youtube-summariser\config.yaml`
 
@@ -112,26 +114,30 @@ youtube-summariser search "cooking recipes" --max-results 10
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `init` | Interactive setup for API keys and preferences |
+
+| Command     | Description                                             |
+| ----------- | ------------------------------------------------------- |
+| `init`      | Interactive setup for API keys and preferences          |
 | `summarise` | Summarize a YouTube video (also aliased as `summarize`) |
-| `search` | Search YouTube by title and summarize |
+| `search`    | Search YouTube by title and summarize                   |
+
 
 You can also pass a URL directly without the `summarise` subcommand for convenience.
 
 ### Options
 
-| Flag | Description |
-|------|-------------|
-| `-o, --output` | Specify output filename (default: `summary_<video_id>_<timestamp>.md`) |
-| `--no-save` | Print summary to terminal without saving to file |
-| `--provider` | LLM provider to use: `openai`, `anthropic`, or `openrouter` |
-| `--no-stream` | Disable streaming output |
-| `--first, -1` | Auto-select first search result (search command only) |
-| `--max-results` | Number of search results to display (default: 5) |
-| `-v, --version` | Show version number |
-| `-h, --help` | Show help message |
+
+| Flag            | Description                                                            |
+| --------------- | ---------------------------------------------------------------------- |
+| `-o, --output`  | Specify output filename (default: `YYYY-MM-DD__video-title-slug__video-id.md`) |
+| `--no-save`     | Print summary to terminal without saving to file                       |
+| `--provider`    | LLM provider to use: `openai`, `anthropic`, or `openrouter`            |
+| `--no-stream`   | Disable streaming output                                               |
+| `--first, -1`   | Auto-select first search result (search command only)                  |
+| `--max-results` | Number of search results to display (default: 5)                       |
+| `-v, --version` | Show version number                                                    |
+| `-h, --help`    | Show help message                                                      |
+
 
 ### zsh Tip (URLs Without Quotes)
 
