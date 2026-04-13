@@ -8,7 +8,7 @@ A command-line tool that summarizes YouTube videos using AI. It extracts transcr
 pip install youtube-summariser
 ```
 
-> **Note:** Both `youtube-summariser` (British) and `youtube-summarizer` (American) commands are available - use whichever you prefer!
+> **Note:** `youtube-summariser` (British), `youtube-summarizer` (American), and `ys` (short alias) commands are all available.
 
 Or install from source:
 
@@ -76,6 +76,9 @@ The default provider is **Anthropic**. You can change this via `init` or overrid
 # Interactive configuration
 youtube-summariser init
 
+# Same command with the short alias
+ys init
+
 # Summarize a video (saves to auto-generated filename)
 youtube-summariser "https://www.youtube.com/watch?v=VIDEO_ID"
 
@@ -129,6 +132,26 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 | `--max-results` | Number of search results to display (default: 5) |
 | `-v, --version` | Show version number |
 | `-h, --help` | Show help message |
+
+### zsh Tip (URLs Without Quotes)
+
+In `zsh`, unquoted YouTube URLs containing `?` are treated as glob patterns before the CLI runs.
+
+Use one of these approaches:
+
+```bash
+# Escape ? in the URL
+ys https://www.youtube.com/watch\?v=VIDEO_ID
+
+# Or disable globbing for this command
+noglob ys https://www.youtube.com/watch?v=VIDEO_ID
+```
+
+To make this convenient permanently, add to `~/.zshrc`:
+
+```bash
+ys() { noglob command ys "$@"; }
+```
 
 ### Output Format
 

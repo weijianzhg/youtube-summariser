@@ -17,6 +17,7 @@ Examples:
 """
 
 import argparse
+import os
 import sys
 from datetime import datetime
 
@@ -291,17 +292,19 @@ def main():
     if len(sys.argv) > 1 and is_url_like(sys.argv[1]):
         sys.argv.insert(1, "summarise")
 
+    prog_name = os.path.basename(sys.argv[0]) or "youtube-summarizer"
+
     parser = argparse.ArgumentParser(
-        prog="youtube-summarizer",
+        prog=prog_name,
         description="Summarize YouTube videos from the command line",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
-  youtube-summarizer init
-  youtube-summarizer "https://www.youtube.com/watch?v=VIDEO_ID"
-  youtube-summarizer "https://youtu.be/VIDEO_ID" --output summary.md
-  youtube-summarizer "https://youtube.com/watch?v=VIDEO_ID" --provider openai
-  youtube-summarizer search "Python tutorial" --first
+  {prog_name} init
+  {prog_name} "https://www.youtube.com/watch?v=VIDEO_ID"
+  {prog_name} "https://youtu.be/VIDEO_ID" --output summary.md
+  {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+  {prog_name} search "Python tutorial" --first
         """,
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")

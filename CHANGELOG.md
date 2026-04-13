@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-04-13
+
+### Added
+- **Short CLI alias**: Added `ys` as a compact command alias for `youtube-summariser`
+  - Example: `ys init` and `ys "https://youtu.be/VIDEO_ID"`
+- **Shell usage note**: Added README guidance for running unquoted YouTube URLs in zsh
+  - Includes `watch\\?v=` escaping and `noglob ys ...` options
+
+### Changed
+- CLI help now uses the invoked command name dynamically (for example, `ys --help` shows `ys` examples)
+
 ## [0.6.1] - 2026-02-05
 
 ### Added
