@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-04-13
+
+### Added
+- Human-searchable default filenames: `YYYY-MM-DD__video-title-slug__video-id.md`
+- Video title metadata lookup for URL mode filename generation
+- Test coverage for filename formatting and title propagation in both `search` and direct URL flows
+
+### Changed
+- Updated CLI help and README to document the new default filename format
+
+### Removed
+- Removed committed summary output artifacts from version control
+
 ## [0.6.2] - 2026-04-13
 
 ### Added
