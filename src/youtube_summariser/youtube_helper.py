@@ -182,3 +182,36 @@ class YouTubeHelper:
         except Exception as e:
             logger.error(f"Error searching YouTube for '{query}': {str(e)}")
             raise Exception(f"Failed to search YouTube: {str(e)}")
+
+    @staticmethod
+    def get_video_title(video_id: str) -> str:
+        """
+        Get a video's title from YouTube.
+
+        Args:
+            video_id: YouTube video ID
+
+        Returns:
+            Video title string
+
+        Raises:
+            Exception: If title lookup fails
+        """
+        from pytubefix import YouTube
+
+        try:
+            if not video_id or not video_id.strip():
+                raise ValueError("Video ID cannot be empty")
+
+            youtube_url = f"https://www.youtube.com/watch?v={video_id}"
+            video = YouTube(youtube_url)
+            title = (video.title or "").strip()
+            if not title:
+                raise Exception("Empty title returned")
+            return title
+
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting title for video {video_id}: {str(e)}")
+            raise Exception(f"Failed to get video title: {str(e)}")
