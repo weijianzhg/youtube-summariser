@@ -1,0 +1,55 @@
+{
+  "dataset_id": "8c5cef22-8a01-4145-9b39-43b60ee8ffdd",
+  "dataset_name": "youtube-summary-mit-seed",
+  "behavior_spec_id": "005a84c9-e944-44e2-b49d-50a56a458f99",
+  "behavior_spec_name": "YouTube Summariser Qwen 4B",
+  "base_model": "Qwen/Qwen3.5-4B",
+  "run_id": "470be766-8f54-4e89-ad9f-8e7ed56f6cc8",
+  "run_number": 1,
+  "dataset_split_ratios": {
+    "train": 0.8,
+    "validation": 0.1,
+    "test": 0.1
+  },
+  "augment": false,
+  "use_llm_judge": true,
+  "max_eval_examples": 10,
+  "max_test_eval_examples": 10,
+  "estimated_training_tokens": 556316,
+  "estimated_cost_cents": 117,
+  "started_at": "2026-06-02T17:25:06Z",
+  "completed_at": "2026-06-02T17:49:31Z",
+  "last_checked_at": "2026-06-02T18:00:00Z",
+  "last_known_status": "failed",
+  "last_known_stage": "failed",
+  "last_known_message": "Run failed during baseline evaluation after generating 3/10 baseline responses. No fine_tune_job_id or model_id was created.",
+  "failure_notes": [
+    "Base Qwen 4B endpoint reached InService at 2026-06-02T17:45:15Z.",
+    "Baseline evaluation started with validation split capped at 10 examples.",
+    "Eval worker generated 3/10 baseline responses, then the ECS eval-worker container exited with code 1.",
+    "CloudWatch eval-worker logs show SageMaker returned a 424 CLIENT_ERROR_FROM_MODEL.",
+    "SageMaker endpoint logs show vLLM rejected an eval prompt because serving max context was 8192 tokens: 7937 input tokens + 256 output tokens = 8193.",
+    "The practical fix is to upload a capped/chunked dataset whose eval and train rows stay comfortably below the 8192-token serving limit."
+  ],
+  "capped_dataset": {
+    "dataset_id": "a69405c8-a7a2-4c68-96dd-8aa9e2c557af",
+    "dataset_name": "youtube-summary-mit-seed-capped",
+    "max_input_chars": 16000,
+    "max_output_chars": 6000,
+    "input_rows_truncated": 39,
+    "output_rows_truncated": 45
+  },
+  "rerun": {
+    "run_id": "9dea92b0-c170-449c-850b-f094feb4f6b1",
+    "run_number": 2,
+    "dataset_id": "a69405c8-a7a2-4c68-96dd-8aa9e2c557af",
+    "status": "training",
+    "stage": "Training model (55%)",
+    "message": "training run is running.",
+    "started_at": "2026-06-02T19:08:07Z",
+    "last_checked_at": "2026-06-02T19:09:00Z",
+    "estimated_training_tokens": 327418,
+    "estimated_cost_cents": 69,
+    "baseline_eval_note": "Baseline eval and baseline test both completed on capped data before training started."
+  }
+}

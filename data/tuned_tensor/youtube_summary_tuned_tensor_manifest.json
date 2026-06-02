@@ -1,0 +1,32 @@
+{
+  "created_by": "scripts/prepare_finetune_dataset.py",
+  "source_dataset": "ClarityClips/youtube-video-summarization",
+  "source_url": "https://huggingface.co/datasets/ClarityClips/youtube-video-summarization",
+  "source_license": "mit",
+  "source_sha": "ca33e3f950fc45e5a804d090c4cea2e43cb8584f",
+  "raw_file": "data/raw/ClarityClips__youtube-video-summarization/train-00000-of-00001.parquet",
+  "raw_file_sha256": "db7ca12afe6f57dccb156f145dfb1b7eb0ff58af1b92c7b6a4ebca6b38f8b377",
+  "format": "Tuned Tensor input/output JSONL",
+  "schema": {
+    "input": "string",
+    "output": "string"
+  },
+  "system_prompt_for_behavior_spec": "Summarize this video transcript concisely.\n\n## Output Format (use markdown):\n\n### TL;DR\nOne paragraph capturing the essence (2-3 sentences).\n\n### Key Takeaways\n- Bullet points of the most important insights\n- Include timestamps like [MM:SS] where relevant\n\n### Detailed Summary\nComprehensive breakdown. Scale length to video complexity (~50 words per 5 minutes of content).\n\n### Notable Quotes\n1-3 memorable quotes with timestamps, if any stand out.\n\nPreserve any timestamps from the transcript. Be concise - omit filler and tangents.",
+  "file_size_bytes": 2781578,
+  "max_upload_size_bytes": 104857600,
+  "counts": {
+    "source_rows": 109,
+    "usable_rows": 103
+  },
+  "lengths": {
+    "max_input_chars": 84763,
+    "max_output_chars": 65737,
+    "avg_input_chars": 18256,
+    "avg_output_chars": 8531
+  },
+  "outputs": {
+    "dataset": "data/tuned_tensor/youtube_summary_tuned_tensor.jsonl",
+    "source_sidecar": "data/tuned_tensor/youtube_summary_tuned_tensor_sources.jsonl"
+  },
+  "upload_command": "tt datasets upload data/tuned_tensor/youtube_summary_tuned_tensor.jsonl --name \"youtube-summary-mit-seed\" --description \"MIT-licensed YouTube transcript-summary seed dataset\""
+}

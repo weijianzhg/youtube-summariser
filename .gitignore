@@ -21,6 +21,7 @@ wheels/
 *.egg
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
@@ -75,4 +76,5 @@ var/
 *.egg
 
 .env
+data/raw/
 *.txt

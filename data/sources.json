@@ -1,0 +1,51 @@
+{
+  "collected": [
+    {
+      "id": "ClarityClips/youtube-video-summarization",
+      "url": "https://huggingface.co/datasets/ClarityClips/youtube-video-summarization",
+      "license": "mit",
+      "sha": "ca33e3f950fc45e5a804d090c4cea2e43cb8584f",
+      "rows": 109,
+      "usable_rows": 103,
+      "fields": ["link", "title", "category", "transcript", "summarize"],
+      "reason": "Direct YouTube transcript-summary pairs with a permissive declared license."
+    }
+  ],
+  "candidates": [
+    {
+      "id": "PleIAs/YouTube-Commons",
+      "url": "https://huggingface.co/datasets/PleIAs/YouTube-Commons",
+      "license": "cc-by-4.0",
+      "status": "candidate_domain_corpus",
+      "reason": "Large transcript-only corpus from CC-BY YouTube videos."
+    },
+    {
+      "id": "jamescalam/youtube-transcriptions",
+      "url": "https://huggingface.co/datasets/jamescalam/youtube-transcriptions",
+      "license": "afl-3.0",
+      "status": "candidate_domain_corpus",
+      "reason": "English technical YouTube transcript chunks without summaries."
+    },
+    {
+      "id": "AndresR2909/youtube_transcriptions_summaries_gpt4",
+      "url": "https://huggingface.co/datasets/AndresR2909/youtube_transcriptions_summaries_gpt4",
+      "license": null,
+      "status": "skipped",
+      "reason": "No declared license found in Hugging Face metadata."
+    },
+    {
+      "id": "Svngoku/youtube-summarization-sft",
+      "url": "https://huggingface.co/datasets/Svngoku/youtube-summarization-sft",
+      "license": null,
+      "status": "skipped",
+      "reason": "No declared license found in Hugging Face metadata."
+    },
+    {
+      "id": "emirunlu26/turkish-youtube-text-summarization",
+      "url": "https://huggingface.co/datasets/emirunlu26/turkish-youtube-text-summarization",
+      "license": "apache-2.0",
+      "status": "not_collected",
+      "reason": "Permissive, but Turkish rather than the current English-first target."
+    }
+  ]
+}

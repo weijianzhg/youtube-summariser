@@ -1,0 +1,23 @@
+{
+  "created_by": "scripts/prepare_finetune_dataset.py",
+  "source_dataset": "ClarityClips/youtube-video-summarization",
+  "source_url": "https://huggingface.co/datasets/ClarityClips/youtube-video-summarization",
+  "source_license": "mit",
+  "source_sha": "ca33e3f950fc45e5a804d090c4cea2e43cb8584f",
+  "raw_file": "data/raw/ClarityClips__youtube-video-summarization/train-00000-of-00001.parquet",
+  "raw_file_sha256": "db7ca12afe6f57dccb156f145dfb1b7eb0ff58af1b92c7b6a4ebca6b38f8b377",
+  "format": "chat messages JSONL",
+  "system_prompt": "Summarize this video transcript concisely.\n\n## Output Format (use markdown):\n\n### TL;DR\nOne paragraph capturing the essence (2-3 sentences).\n\n### Key Takeaways\n- Bullet points of the most important insights\n- Include timestamps like [MM:SS] where relevant\n\n### Detailed Summary\nComprehensive breakdown. Scale length to video complexity (~50 words per 5 minutes of content).\n\n### Notable Quotes\n1-3 memorable quotes with timestamps, if any stand out.\n\nPreserve any timestamps from the transcript. Be concise - omit filler and tangents.",
+  "seed": 42,
+  "eval_ratio": 0.1,
+  "counts": {
+    "source_rows": 109,
+    "usable_rows": 103,
+    "train_rows": 93,
+    "eval_rows": 10
+  },
+  "outputs": {
+    "train": "data/processed/youtube_summary_sft_train.jsonl",
+    "eval": "data/processed/youtube_summary_sft_eval.jsonl"
+  }
+}
