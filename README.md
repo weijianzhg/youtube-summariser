@@ -1,6 +1,6 @@
 # YouTube Summariser
 
-A command-line tool that summarizes YouTube videos using AI. It extracts transcripts from YouTube videos and generates structured summaries using OpenAI, Anthropic, or OpenRouter (300+ models).
+A command-line tool that summarizes YouTube videos using AI. It extracts transcripts from YouTube videos and generates structured summaries using OpenAI, Anthropic, OpenRouter (300+ models), or a local Transformers model.
 
 ## Installation
 
@@ -28,7 +28,7 @@ youtube-summariser init
 
 This guides you through:
 
-- Selecting your default provider (Anthropic, OpenAI, or OpenRouter)
+- Selecting your default provider (Anthropic, OpenAI, OpenRouter, or local)
 - Entering your API key (securely masked)
 - Optionally configuring additional providers
 
@@ -58,6 +58,9 @@ export OPENAI_API_KEY=your_openai_api_key
 
 # For OpenRouter (access 300+ models)
 export OPENROUTER_API_KEY=your_openrouter_api_key
+
+# For a local Transformers model directory or .tar.gz archive
+export YOUTUBE_SUMMARISER_LOCAL_MODEL=/path/to/local-model.tar.gz
 ```
 
 Or create a `.env` file in your working directory.
@@ -95,7 +98,40 @@ youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
 
 # Use OpenRouter with access to 300+ models
 youtube-summariser "https://youtu.be/VIDEO_ID" --provider openrouter
+
+# Use a local model archive without editing config
+youtube-summariser "https://youtu.be/VIDEO_ID" \
+  --local-model /Users/eve/tuned-tensor-repos/youtube-summariser/downloads/youtube-summariser-qwen3.5-4b-run-728676d4.tar.gz
+
+# Force long-video map-reduce mode
+youtube-summariser "https://youtu.be/VIDEO_ID" --summary-strategy map-reduce
 ```
+
+### Local Models
+
+Install the optional local runtime first:
+
+```bash
+pip install -e ".[local]"
+```
+
+Then either pass a model path per command with `--local-model`, set `YOUTUBE_SUMMARISER_LOCAL_MODEL`, or save it in `~/.youtube-summariser/config.yaml`:
+
+```yaml
+provider: local
+local:
+  model_path: /Users/eve/tuned-tensor-repos/youtube-summariser/downloads/youtube-summariser-qwen3.5-4b-run-728676d4.tar.gz
+  max_tokens: 512
+  max_input_tokens: 1536
+```
+
+The local provider accepts an extracted Hugging Face model directory or a `.tar`/`.tar.gz` archive. Archives are extracted once into `~/.cache/youtube-summariser/models`.
+
+Long transcripts are handled automatically. In the default `--summary-strategy auto` mode,
+the CLI uses a single model call when the transcript fits the selected model context and
+switches to local map-reduce summarization when it does not. Pass
+`--summary-strategy single --allow-truncate` only when you intentionally want a quick
+partial smoke-test summary.
 
 ### Search by Title
 
@@ -127,16 +163,19 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 ### Options
 
 
-| Flag            | Description                                                            |
-| --------------- | ---------------------------------------------------------------------- |
-| `-o, --output`  | Specify output filename (default: `YYYY-MM-DD__video-title-slug__video-id.md`) |
-| `--no-save`     | Print summary to terminal without saving to file                       |
-| `--provider`    | LLM provider to use: `openai`, `anthropic`, or `openrouter`            |
-| `--no-stream`   | Disable streaming output                                               |
-| `--first, -1`   | Auto-select first search result (search command only)                  |
-| `--max-results` | Number of search results to display (default: 5)                       |
-| `-v, --version` | Show version number                                                    |
-| `-h, --help`    | Show help message                                                      |
+| Flag                 | Description                                                            |
+| -------------------- | ---------------------------------------------------------------------- |
+| `-o, --output`       | Specify output filename (default: `YYYY-MM-DD__video-title-slug__video-id.md`) |
+| `--no-save`          | Print summary to terminal without saving to file                       |
+| `--provider`         | LLM provider to use: `openai`, `anthropic`, `openrouter`, or `local`   |
+| `--local-model`      | Path to a local Transformers model directory or archive                |
+| `--summary-strategy` | Summarization strategy: `auto`, `single`, or `map-reduce`              |
+| `--allow-truncate`   | Allow an explicit partial smoke-test summary when input exceeds context |
+| `--no-stream`        | Disable streaming output                                               |
+| `--first, -1`        | Auto-select first search result (search command only)                  |
+| `--max-results`      | Number of search results to display (default: 5)                       |
+| `-v, --version`      | Show version number                                                    |
+| `-h, --help`         | Show help message                                                      |
 
 
 ### zsh Tip (URLs Without Quotes)
@@ -194,7 +233,7 @@ Summary files are saved as markdown (`.md`) with the following structure:
 ## Requirements
 
 - Python 3.10+
-- An API key for OpenAI, Anthropic, or OpenRouter
+- An API key for OpenAI, Anthropic, or OpenRouter, or local model dependencies installed with `pip install -e ".[local]"`
 
 ## License
 

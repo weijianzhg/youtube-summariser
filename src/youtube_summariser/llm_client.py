@@ -1,4 +1,4 @@
-"""LLM Client abstraction for OpenAI, Anthropic, and OpenRouter."""
+"""LLM Client abstraction for cloud and local providers."""
 
 import logging
 import os
@@ -8,8 +8,11 @@ from typing import Iterator, Optional
 import yaml
 
 from .config_manager import load_user_config
+from .local_llm import LOCAL_MODEL_ENV, LocalTransformersClient
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_PROVIDERS = ("openai", "anthropic", "openrouter", "local")
 
 
 def load_config() -> dict:
@@ -36,13 +39,14 @@ def load_config() -> dict:
             "openai": {"model": "gpt-5.2", "max_tokens": 3000},
             "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 3000},
             "openrouter": {"model": "anthropic/claude-sonnet-4.5", "max_tokens": 3000},
+            "local": {"max_tokens": 512, "max_input_tokens": 1536},
         }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
 
 
 class LLMClient:
-    """Unified LLM client supporting OpenAI, Anthropic, and OpenRouter."""
+    """Unified LLM client supporting OpenAI, Anthropic, OpenRouter, and local models."""
 
     def __init__(self, config: Optional[dict] = None, provider: Optional[str] = None):
         """
@@ -50,7 +54,7 @@ class LLMClient:
 
         Args:
             config: Optional configuration dict. If not provided, loads from config.yaml.
-            provider: Optional provider override ('openai', 'anthropic', or 'openrouter').
+            provider: Optional provider override.
         """
         self.config = config or load_config()
         self.provider = provider or self.config.get("provider", "openai")
@@ -59,6 +63,10 @@ class LLMClient:
 
     def _init_client(self):
         """Initialize the appropriate client based on provider."""
+        if self.provider == "local":
+            self._client = LocalTransformersClient(self.config.get("local", {}))
+            return
+
         # API key priority: environment variable > user config
         openai_key = os.environ.get("OPENAI_API_KEY") or self.config.get("openai", {}).get(
             "api_key"
@@ -75,7 +83,8 @@ class LLMClient:
             raise ValueError(
                 "No API keys found. Run 'youtube-summariser init' to configure, "
                 "or set OPENAI_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY "
-                "environment variable."
+                "environment variable. For offline summarization, use --provider local "
+                "with a configured local model."
             )
 
         if self.provider == "openai":
@@ -118,7 +127,17 @@ class LLMClient:
             "openai": "gpt-5.2",
             "anthropic": "claude-sonnet-4-5-20250929",
             "openrouter": "anthropic/claude-sonnet-4.5",
+            "local": "local",
         }
+        if self.provider == "local":
+            if self._client is not None:
+                return self._client.model_label()
+            return (
+                provider_config.get("model")
+                or provider_config.get("model_path")
+                or os.environ.get(LOCAL_MODEL_ENV)
+                or defaults["local"]
+            )
         default = defaults.get(self.provider, "gpt-5.2")
         return provider_config.get("model", default)
 
@@ -126,6 +145,24 @@ class LLMClient:
         """Get max tokens for the current provider."""
         provider_config = self.config.get(self.provider, {})
         return provider_config.get("max_tokens", 3000)
+
+    def get_max_input_tokens(self) -> int:
+        """Get the prompt-token limit for the current provider, if configured."""
+        provider_config = self.config.get(self.provider, {})
+        if self.provider == "local" and self._client is not None:
+            return self._client.get_max_input_tokens()
+        return int(provider_config.get("max_input_tokens", 0) or 0)
+
+    def count_chat_tokens(self, system_prompt: str, user_message: str) -> int:
+        """Count or estimate chat-template tokens for routing and chunking."""
+        if self.provider == "local" and self._client is not None:
+            return self._client.count_chat_tokens(system_prompt, user_message)
+        return max(1, (len(system_prompt) + len(user_message)) // 4 + 16)
+
+    def set_truncation_allowed(self, allowed: bool) -> None:
+        """Allow or reject backend truncation where the provider supports it."""
+        if self.provider == "local" and self._client is not None:
+            self._client.set_truncation_allowed(allowed)
 
     def chat(self, system_prompt: str, user_message: str) -> str:
         """
@@ -147,6 +184,8 @@ class LLMClient:
                 "Non-streaming mode is not supported for OpenRouter. "
                 "Please use streaming mode (remove --no-stream flag)."
             )
+        elif self.provider == "local":
+            return self._chat_local(system_prompt, user_message)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -167,6 +206,8 @@ class LLMClient:
             yield from self._stream_chat_anthropic(system_prompt, user_message)
         elif self.provider == "openrouter":
             yield from self._stream_chat_openrouter(system_prompt, user_message)
+        elif self.provider == "local":
+            yield from self._stream_chat_local(system_prompt, user_message)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
@@ -236,3 +277,11 @@ class LLMClient:
                 delta = event.choices[0].delta
                 if delta and delta.content:
                     yield delta.content
+
+    def _chat_local(self, system_prompt: str, user_message: str) -> str:
+        """Send chat request to a local Transformers model."""
+        return self._client.chat(system_prompt, user_message)
+
+    def _stream_chat_local(self, system_prompt: str, user_message: str) -> Iterator[str]:
+        """Send streaming chat request to a local Transformers model."""
+        yield from self._client.stream_chat(system_prompt, user_message)

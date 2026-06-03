@@ -17,6 +17,7 @@ Examples:
 """
 
 import argparse
+import copy
 import os
 import re
 import sys
@@ -27,59 +28,12 @@ from dotenv import load_dotenv
 
 from . import __version__
 from .config_manager import run_init
-from .llm_client import LLMClient
+from .llm_client import SUPPORTED_PROVIDERS, LLMClient, load_config
+from .summarizer import SYSTEM_PROMPT as SYSTEM_PROMPT
+from .summarizer import summarize_transcript as summarize_transcript
 from .youtube_helper import YouTubeHelper
 
 load_dotenv()
-
-SYSTEM_PROMPT = """Summarize this video transcript concisely.
-
-## Output Format (use markdown):
-
-### TL;DR
-One paragraph capturing the essence (2-3 sentences).
-
-### Key Takeaways
-- Bullet points of the most important insights
-- Include timestamps like [MM:SS] where relevant
-
-### Detailed Summary
-Comprehensive breakdown. Scale length to video complexity (~50 words per 5 minutes of content).
-
-### Notable Quotes
-1-3 memorable quotes with timestamps, if any stand out.
-
-Preserve any timestamps from the transcript. Be concise—omit filler and tangents."""
-
-
-def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -> str:
-    """
-    Summarize transcript using the configured LLM.
-
-    Args:
-        transcript: The video transcript to summarize
-        llm: The LLM client instance
-        stream: If True, use streaming and print output incrementally
-
-    Returns:
-        The complete summary text
-    """
-    if stream:
-        # Use streaming and collect the full response
-        summary_parts = []
-        print("\n--- Summary ---\n")
-        try:
-            for chunk in llm.stream_chat(SYSTEM_PROMPT, transcript):
-                print(chunk, end="", flush=True)
-                summary_parts.append(chunk)
-            print("\n")
-            return "".join(summary_parts)
-        except KeyboardInterrupt:
-            print("\n\nSummary generation interrupted by user.")
-            return "".join(summary_parts)
-    else:
-        # Non-streaming fallback
-        return llm.chat(SYSTEM_PROMPT, transcript)
 
 
 def slugify_filename_component(value: str, max_length: int = 80) -> str:
@@ -121,7 +75,7 @@ def cmd_search(args):
     """Handle the search subcommand."""
     # Initialize LLM client first
     try:
-        llm = LLMClient(provider=args.provider)
+        llm = create_llm_from_args(args)
         print(f"Using {llm.provider}/{llm.get_model()}")
     except ValueError as e:
         print(f"Error: {str(e)}", file=sys.stderr)
@@ -205,7 +159,13 @@ def process_video(
     print(f"Transcript: {len(transcript)} characters")
     print("Generating summary...")
     try:
-        summary = summarize_transcript(transcript, llm, stream=not args.no_stream)
+        summary = summarize_transcript(
+            transcript,
+            llm,
+            stream=not args.no_stream,
+            summary_strategy=getattr(args, "summary_strategy", "auto"),
+            allow_truncate=getattr(args, "allow_truncate", False),
+        )
     except Exception as e:
         print(f"\nError generating summary: {str(e)}", file=sys.stderr)
         sys.exit(1)
@@ -251,7 +211,7 @@ def cmd_summarise(args):
     """Handle the summarise subcommand (or direct URL usage)."""
     # Initialize LLM client
     try:
-        llm = LLMClient(provider=args.provider)
+        llm = create_llm_from_args(args)
         print(f"Using {llm.provider}/{llm.get_model()}")
     except ValueError as e:
         print(f"Error: {str(e)}", file=sys.stderr)
@@ -278,6 +238,18 @@ def cmd_summarise(args):
     process_video(video_id, args.url, video_title, args, llm)
 
 
+def create_llm_from_args(args) -> LLMClient:
+    """Create an LLM client, applying CLI-only local model overrides."""
+    provider = args.provider or ("local" if getattr(args, "local_model", None) else None)
+    config = None
+    if getattr(args, "local_model", None):
+        config = copy.deepcopy(load_config())
+        config.setdefault("local", {})["model_path"] = args.local_model
+    if config is None:
+        return LLMClient(provider=provider)
+    return LLMClient(config=config, provider=provider)
+
+
 def add_summarise_args(parser):
     """Add common summarise arguments to a parser."""
     parser.add_argument("url", help="YouTube video URL to summarize")
@@ -292,14 +264,30 @@ def add_summarise_args(parser):
     )
     parser.add_argument(
         "--provider",
-        choices=["openai", "anthropic", "openrouter"],
+        choices=SUPPORTED_PROVIDERS,
         help="LLM provider to use (overrides config)",
+        default=None,
+    )
+    parser.add_argument(
+        "--local-model",
+        help="Path to a local Transformers model directory or .tar/.tar.gz archive",
         default=None,
     )
     parser.add_argument(
         "--no-stream",
         action="store_true",
         help="Disable streaming output (wait for complete response before displaying)",
+    )
+    parser.add_argument(
+        "--summary-strategy",
+        choices=["auto", "single", "map-reduce"],
+        default="auto",
+        help="Summarization strategy for long transcripts (default: auto)",
+    )
+    parser.add_argument(
+        "--allow-truncate",
+        action="store_true",
+        help="Allow explicit partial smoke-test summaries when input exceeds context",
     )
 
 
@@ -325,6 +313,7 @@ Examples:
   {prog_name} "https://www.youtube.com/watch?v=VIDEO_ID"
   {prog_name} "https://youtu.be/VIDEO_ID" --output summary.md
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+  {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --local-model ./downloads/model.tar.gz
   {prog_name} search "Python tutorial" --first
         """,
     )
@@ -373,14 +362,30 @@ Examples:
     )
     search_parser.add_argument(
         "--provider",
-        choices=["openai", "anthropic", "openrouter"],
+        choices=SUPPORTED_PROVIDERS,
         help="LLM provider to use (overrides config)",
+        default=None,
+    )
+    search_parser.add_argument(
+        "--local-model",
+        help="Path to a local Transformers model directory or .tar/.tar.gz archive",
         default=None,
     )
     search_parser.add_argument(
         "--no-stream",
         action="store_true",
         help="Disable streaming output (wait for complete response before displaying)",
+    )
+    search_parser.add_argument(
+        "--summary-strategy",
+        choices=["auto", "single", "map-reduce"],
+        default="auto",
+        help="Summarization strategy for long transcripts (default: auto)",
+    )
+    search_parser.add_argument(
+        "--allow-truncate",
+        action="store_true",
+        help="Allow explicit partial smoke-test summaries when input exceeds context",
     )
     search_parser.set_defaults(func=cmd_search)
 

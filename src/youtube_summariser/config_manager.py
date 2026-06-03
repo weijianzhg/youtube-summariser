@@ -105,19 +105,22 @@ def run_init() -> None:
 
     # Provider selection
     existing_provider = existing_config.get("provider", "anthropic")
-    provider_defaults = {"anthropic": "1", "openai": "2", "openrouter": "3"}
+    provider_defaults = {"anthropic": "1", "openai": "2", "openrouter": "3", "local": "4"}
     provider_default = provider_defaults.get(existing_provider, "1")
 
     print("Which LLM provider would you like to use by default?")
     print("  1. anthropic (Recommended)")
     print("  2. openai")
     print("  3. openrouter (Access 300+ models)")
+    print("  4. local (Run a downloaded Transformers model)")
     selection = prompt_with_default("Select", provider_default)
 
     if selection == "2":
         provider = "openai"
     elif selection == "3":
         provider = "openrouter"
+    elif selection == "4":
+        provider = "local"
     else:
         provider = "anthropic"
 
@@ -127,6 +130,7 @@ def run_init() -> None:
         "openai": existing_config.get("openai", {}).copy(),
         "anthropic": existing_config.get("anthropic", {}).copy(),
         "openrouter": existing_config.get("openrouter", {}).copy(),
+        "local": existing_config.get("local", {}).copy(),
     }
 
     # Ensure max_tokens defaults exist
@@ -136,6 +140,16 @@ def run_init() -> None:
         config["anthropic"]["max_tokens"] = 3000
     if "max_tokens" not in config["openrouter"]:
         config["openrouter"]["max_tokens"] = 3000
+    if "max_tokens" not in config["local"]:
+        config["local"]["max_tokens"] = 512
+    if "max_input_tokens" not in config["local"]:
+        config["local"]["max_input_tokens"] = 1536
+    if "cache_dir" not in config["local"]:
+        config["local"]["cache_dir"] = "~/.cache/youtube-summariser/models"
+    if "device" not in config["local"]:
+        config["local"]["device"] = "auto"
+    if "torch_dtype" not in config["local"]:
+        config["local"]["torch_dtype"] = "auto"
 
     print()
 
@@ -146,9 +160,12 @@ def run_init() -> None:
     elif provider == "openai":
         _configure_openai(config, existing_config)
         _ask_configure_others(config, existing_config, exclude=["openai"])
-    else:  # openrouter
+    elif provider == "openrouter":
         _configure_openrouter(config, existing_config)
         _ask_configure_others(config, existing_config, exclude=["openrouter"])
+    else:  # local
+        _configure_local(config, existing_config)
+        _ask_configure_others(config, existing_config, exclude=["local"])
 
     # Save configuration
     save_user_config(config)
@@ -205,6 +222,23 @@ def _configure_openrouter(config: dict[str, Any], existing_config: dict[str, Any
     config["openrouter"]["model"] = model
 
 
+def _configure_local(config: dict[str, Any], existing_config: dict[str, Any]) -> None:
+    """Configure local model settings."""
+    existing_local = existing_config.get("local", {})
+    existing_path = existing_local.get("model_path", "")
+    existing_max_tokens = str(existing_local.get("max_tokens", 512))
+    existing_max_input_tokens = str(existing_local.get("max_input_tokens", 1536))
+
+    print("Local provider runs an extracted Hugging Face model directory or .tar.gz archive.")
+    model_path = prompt_with_default("Model path", existing_path)
+    max_tokens = prompt_with_default("Max output tokens", existing_max_tokens)
+    max_input_tokens = prompt_with_default("Max input tokens", existing_max_input_tokens)
+
+    config["local"]["model_path"] = model_path
+    config["local"]["max_tokens"] = int(max_tokens)
+    config["local"]["max_input_tokens"] = int(max_input_tokens)
+
+
 def _ask_configure_others(
     config: dict[str, Any], existing_config: dict[str, Any], exclude: list[str]
 ) -> None:
@@ -213,6 +247,7 @@ def _ask_configure_others(
         "openai": ("OpenAI", _configure_openai),
         "anthropic": ("Anthropic", _configure_anthropic),
         "openrouter": ("OpenRouter", _configure_openrouter),
+        "local": ("Local model", _configure_local),
     }
 
     for provider_key, (provider_name, configure_func) in providers.items():

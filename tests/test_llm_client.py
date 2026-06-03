@@ -166,3 +166,60 @@ class TestLLMClientAPIKeyValidation:
         client = LLMClient(config=config, provider="openrouter")
         assert client.provider == "openrouter"
         assert client._client is not None
+
+    def test_local_provider_does_not_require_api_keys(self, tmp_path, monkeypatch):
+        """Local provider should initialize without cloud API keys."""
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        monkeypatch.delenv("YOUTUBE_SUMMARISER_LOCAL_MODEL", raising=False)
+
+        model_dir = tmp_path / "model"
+        model_dir.mkdir()
+        config = {
+            "provider": "local",
+            "openai": {},
+            "anthropic": {},
+            "openrouter": {},
+            "local": {"model_path": str(model_dir)},
+        }
+
+        client = LLMClient(config=config, provider="local")
+        assert client.provider == "local"
+        assert client._client is not None
+
+    def test_local_provider_without_model_path_raises(self, monkeypatch):
+        """Local provider should explain how to configure a missing model path."""
+        monkeypatch.delenv("YOUTUBE_SUMMARISER_LOCAL_MODEL", raising=False)
+
+        config = {
+            "provider": "local",
+            "openai": {},
+            "anthropic": {},
+            "openrouter": {},
+            "local": {},
+        }
+
+        with pytest.raises(ValueError) as exc_info:
+            LLMClient(config=config, provider="local")
+
+        assert "Local model path not configured" in str(exc_info.value)
+        assert "--local-model" in str(exc_info.value)
+
+    def test_local_provider_uses_env_model_path(self, tmp_path, monkeypatch):
+        """YOUTUBE_SUMMARISER_LOCAL_MODEL should configure the local provider."""
+        model_dir = tmp_path / "env-model"
+        model_dir.mkdir()
+        monkeypatch.setenv("YOUTUBE_SUMMARISER_LOCAL_MODEL", str(model_dir))
+
+        config = {
+            "provider": "local",
+            "openai": {},
+            "anthropic": {},
+            "openrouter": {},
+            "local": {},
+        }
+
+        client = LLMClient(config=config, provider="local")
+        assert client.provider == "local"
+        assert client.get_model() == "env-model"

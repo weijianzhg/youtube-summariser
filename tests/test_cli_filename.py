@@ -9,7 +9,8 @@ from youtube_summariser import cli
 class FakeLLMClient:
     """Minimal LLM stub for CLI command tests."""
 
-    def __init__(self, provider=None):
+    def __init__(self, config=None, provider=None):
+        self.config = config
         self.provider = provider or "anthropic"
 
     def get_model(self):
@@ -148,3 +149,23 @@ class TestTitlePlumbing:
         cli.cmd_summarise(args)
 
         assert captured["video_title"] is None
+
+    def test_create_llm_from_args_infers_local_provider(self, tmp_path, monkeypatch):
+        """Passing --local-model should select local provider and override local config."""
+        captured = {}
+
+        class CapturingLLMClient:
+            def __init__(self, config=None, provider=None):
+                captured["config"] = config
+                captured["provider"] = provider
+
+        monkeypatch.setattr(cli, "LLMClient", CapturingLLMClient)
+        monkeypatch.setattr(cli, "load_config", lambda: {"provider": "anthropic", "local": {}})
+
+        local_model = tmp_path / "model.tar.gz"
+        args = Namespace(provider=None, local_model=str(local_model))
+
+        cli.create_llm_from_args(args)
+
+        assert captured["provider"] == "local"
+        assert captured["config"]["local"]["model_path"] == str(local_model)

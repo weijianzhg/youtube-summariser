@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "youtube-summariser"
 version = "0.6.3"
-description = "Summarize YouTube videos using AI (OpenAI, Anthropic, or OpenRouter)"
+description = "Summarize YouTube videos using AI (OpenAI, Anthropic, OpenRouter, or local models)"
 readme = "README.md"
 license = "MIT"
 authors = [
@@ -56,6 +56,12 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
 ]
+local = [
+    "torch>=2.4.0",
+    "transformers>=5.6.2",
+    "accelerate>=0.34.0",
+    "safetensors>=0.4.5",
+]
 
 [project.scripts]
 youtube-summariser = "youtube_summariser.cli:main"
@@ -84,4 +90,3 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
