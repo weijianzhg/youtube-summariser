@@ -23,9 +23,7 @@ def test_archive_model_path_extracts_to_cache(tmp_path, monkeypatch):
         archive.add(source_dir / "tokenizer.json", arcname="tokenizer.json")
 
     cache_dir = tmp_path / "cache"
-    client = LocalTransformersClient(
-        {"model_path": str(archive_path), "cache_dir": str(cache_dir)}
-    )
+    client = LocalTransformersClient({"model_path": str(archive_path), "cache_dir": str(cache_dir)})
 
     model_dir = client._resolve_model_dir()
 
