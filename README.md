@@ -131,6 +131,10 @@ youtube-summariser "https://youtu.be/VIDEO_ID" --local
 # Equivalent explicit repo ID form
 youtube-summariser "https://youtu.be/VIDEO_ID" \
   --local-model weijianzhg/youtube-summariser-qwen3.5-4b
+
+# Or use another compatible Hugging Face model repo
+youtube-summariser "https://youtu.be/VIDEO_ID" \
+  --local-model owner/model-name
 ```
 
 ```yaml

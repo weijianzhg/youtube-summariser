@@ -2,10 +2,10 @@
 YouTube Summariser - Summarize YouTube videos using AI.
 
 A command-line tool that extracts transcripts from YouTube videos
-and generates structured summaries using OpenAI, Anthropic, or OpenRouter models.
+and generates structured summaries using OpenAI, Anthropic, OpenRouter, or local models.
 """
 
-__version__ = "0.6.3"
+__version__ = "0.7.0"
 __author__ = "Weijian Zhang"
 
 from .llm_client import LLMClient

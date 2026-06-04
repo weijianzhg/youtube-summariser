@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-06-04
+
+### Added
+- Local Transformers provider support with `--local-model`, local config, and `YOUTUBE_SUMMARISER_LOCAL_MODEL`
+- `--local` shortcut for the public Hugging Face checkpoint `weijianzhg/youtube-summariser-qwen3.5-4b`
+- Hugging Face Hub repo ID support for local models, alongside extracted model directories and `.tar`/`.tar.gz` archives
+- Automatic long-video summarization with `--summary-strategy auto`, `single`, and `map-reduce`
+- Token-aware transcript chunking, chunk summary synthesis, and recursive reduce for over-budget local prompts
+- Explicit `--allow-truncate` flag for intentional partial smoke-test summaries
+
+### Changed
+- Long transcripts now use map-reduce only when the selected model's context limit requires it
+- Single-shot mode now fails clearly on over-budget prompts unless truncation is explicitly allowed
+- Local model dependencies now include `huggingface-hub` for direct Hub downloads
+- README, CLI help, and interactive config text now document local Hugging Face model usage
+
 ## [0.6.3] - 2026-04-13
 
 ### Added
@@ -146,4 +162,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command-line interface with multiple output options
 - Configuration via YAML file
 - Support for both OpenAI and Anthropic API providers
-

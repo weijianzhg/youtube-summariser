@@ -325,6 +325,7 @@ Examples:
   {prog_name} "https://youtu.be/VIDEO_ID" --output summary.md
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --provider openai
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --local
+  {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --local-model owner/model-name
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --local-model ./downloads/model.tar.gz
   {prog_name} search "Python tutorial" --first
         """,
