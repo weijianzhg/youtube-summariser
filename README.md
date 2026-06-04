@@ -99,11 +99,18 @@ youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
 # Use OpenRouter with access to 300+ models
 youtube-summariser "https://youtu.be/VIDEO_ID" --provider openrouter
 
-# Use a local model archive without editing config
+# Download and use the default local Qwen fine-tune
+youtube-summariser "https://youtu.be/VIDEO_ID" --local
+
+# Use a specific local model repo/archive without editing config
+youtube-summariser "https://youtu.be/VIDEO_ID" \
+  --local-model weijianzhg/youtube-summariser-qwen3.5-4b
+
+# Use a local model archive from disk
 youtube-summariser "https://youtu.be/VIDEO_ID" \
   --local-model /Users/eve/tuned-tensor-repos/youtube-summariser/downloads/youtube-summariser-qwen3.5-4b-run-728676d4.tar.gz
 
-# Force long-video map-reduce mode
+# Force map-reduce mode for a model with a small context window
 youtube-summariser "https://youtu.be/VIDEO_ID" --summary-strategy map-reduce
 ```
 
@@ -115,23 +122,33 @@ Install the optional local runtime first:
 pip install -e ".[local]"
 ```
 
-Then either pass a model path per command with `--local-model`, set `YOUTUBE_SUMMARISER_LOCAL_MODEL`, or save it in `~/.youtube-summariser/config.yaml`:
+Then either pass a model reference per command with `--local-model`, set `YOUTUBE_SUMMARISER_LOCAL_MODEL`, or save it in `~/.youtube-summariser/config.yaml`:
+
+```bash
+# Downloads weijianzhg/youtube-summariser-qwen3.5-4b on first use, then reuses the cache
+youtube-summariser "https://youtu.be/VIDEO_ID" --local
+
+# Equivalent explicit repo ID form
+youtube-summariser "https://youtu.be/VIDEO_ID" \
+  --local-model weijianzhg/youtube-summariser-qwen3.5-4b
+```
 
 ```yaml
 provider: local
 local:
-  model_path: /Users/eve/tuned-tensor-repos/youtube-summariser/downloads/youtube-summariser-qwen3.5-4b-run-728676d4.tar.gz
+  model_path: weijianzhg/youtube-summariser-qwen3.5-4b
   max_tokens: 512
   max_input_tokens: 1536
 ```
 
-The local provider accepts an extracted Hugging Face model directory or a `.tar`/`.tar.gz` archive. Archives are extracted once into `~/.cache/youtube-summariser/models`.
+The local provider accepts a Hugging Face model repo ID, an extracted Hugging Face model directory, or a `.tar`/`.tar.gz` archive. Hub models and archives are cached under `~/.cache/youtube-summariser/models`; the default public checkpoint is about 8.5 GB to download.
 
-Long transcripts are handled automatically. In the default `--summary-strategy auto` mode,
-the CLI uses a single model call when the transcript fits the selected model context and
-switches to local map-reduce summarization when it does not. Pass
-`--summary-strategy single --allow-truncate` only when you intentionally want a quick
-partial smoke-test summary.
+Long transcripts are handled according to the selected model's token budget. In the default
+`--summary-strategy auto` mode, the CLI uses a single model call when the transcript fits the
+selected model context and switches to map-reduce only when it does not. High-context hosted
+models such as Claude can stay on the single-shot path for videos that need chunking with the
+local Qwen fine-tune. Pass `--summary-strategy single --allow-truncate` only when you
+intentionally want a quick partial smoke-test summary.
 
 ### Search by Title
 
@@ -168,7 +185,8 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 | `-o, --output`       | Specify output filename (default: `YYYY-MM-DD__video-title-slug__video-id.md`) |
 | `--no-save`          | Print summary to terminal without saving to file                       |
 | `--provider`         | LLM provider to use: `openai`, `anthropic`, `openrouter`, or `local`   |
-| `--local-model`      | Path to a local Transformers model directory or archive                |
+| `--local`            | Download and use the default local Qwen fine-tune from Hugging Face    |
+| `--local-model`      | Hugging Face repo ID, local Transformers model directory, or archive   |
 | `--summary-strategy` | Summarization strategy: `auto`, `single`, or `map-reduce`              |
 | `--allow-truncate`   | Allow an explicit partial smoke-test summary when input exceeds context |
 | `--no-stream`        | Disable streaming output                                               |

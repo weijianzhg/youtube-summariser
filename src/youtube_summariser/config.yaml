@@ -18,7 +18,8 @@ openrouter:
   max_tokens: 3000
 
 # Local Hugging Face/Transformers model settings.
-# model_path may point to an extracted model directory or a .tar/.tar.gz archive.
+# model_path may be a Hugging Face repo ID, an extracted model directory, or a .tar/.tar.gz archive.
+# The default public fine-tune is weijianzhg/youtube-summariser-qwen3.5-4b.
 local:
   model_path: ""
   max_tokens: 512

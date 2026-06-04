@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 from . import __version__
 from .config_manager import run_init
 from .llm_client import SUPPORTED_PROVIDERS, LLMClient, load_config
+from .local_llm import DEFAULT_HF_MODEL_ID
 from .summarizer import SYSTEM_PROMPT as SYSTEM_PROMPT
 from .summarizer import summarize_transcript as summarize_transcript
 from .youtube_helper import YouTubeHelper
@@ -240,11 +241,16 @@ def cmd_summarise(args):
 
 def create_llm_from_args(args) -> LLMClient:
     """Create an LLM client, applying CLI-only local model overrides."""
-    provider = args.provider or ("local" if getattr(args, "local_model", None) else None)
+    local_model = getattr(args, "local_model", None)
+    use_default_local = bool(getattr(args, "local", False))
+    if (local_model or use_default_local) and args.provider and args.provider != "local":
+        raise ValueError("--local and --local-model can only be used with the local provider.")
+
+    provider = args.provider or ("local" if local_model or use_default_local else None)
     config = None
-    if getattr(args, "local_model", None):
+    if local_model or use_default_local:
         config = copy.deepcopy(load_config())
-        config.setdefault("local", {})["model_path"] = args.local_model
+        config.setdefault("local", {})["model_path"] = local_model or DEFAULT_HF_MODEL_ID
     if config is None:
         return LLMClient(provider=provider)
     return LLMClient(config=config, provider=provider)
@@ -269,8 +275,13 @@ def add_summarise_args(parser):
         default=None,
     )
     parser.add_argument(
+        "--local",
+        action="store_true",
+        help=f"Use the default local Qwen model from Hugging Face ({DEFAULT_HF_MODEL_ID})",
+    )
+    parser.add_argument(
         "--local-model",
-        help="Path to a local Transformers model directory or .tar/.tar.gz archive",
+        help="Path, .tar/.tar.gz archive, or Hugging Face repo ID for a local Transformers model",
         default=None,
     )
     parser.add_argument(
@@ -282,7 +293,7 @@ def add_summarise_args(parser):
         "--summary-strategy",
         choices=["auto", "single", "map-reduce"],
         default="auto",
-        help="Summarization strategy for long transcripts (default: auto)",
+        help="Summarization strategy when the selected model context is exceeded (default: auto)",
     )
     parser.add_argument(
         "--allow-truncate",
@@ -313,6 +324,7 @@ Examples:
   {prog_name} "https://www.youtube.com/watch?v=VIDEO_ID"
   {prog_name} "https://youtu.be/VIDEO_ID" --output summary.md
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --provider openai
+  {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --local
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --local-model ./downloads/model.tar.gz
   {prog_name} search "Python tutorial" --first
         """,
@@ -367,8 +379,13 @@ Examples:
         default=None,
     )
     search_parser.add_argument(
+        "--local",
+        action="store_true",
+        help=f"Use the default local Qwen model from Hugging Face ({DEFAULT_HF_MODEL_ID})",
+    )
+    search_parser.add_argument(
         "--local-model",
-        help="Path to a local Transformers model directory or .tar/.tar.gz archive",
+        help="Path, .tar/.tar.gz archive, or Hugging Face repo ID for a local Transformers model",
         default=None,
     )
     search_parser.add_argument(
@@ -380,7 +397,7 @@ Examples:
         "--summary-strategy",
         choices=["auto", "single", "map-reduce"],
         default="auto",
-        help="Summarization strategy for long transcripts (default: auto)",
+        help="Summarization strategy when the selected model context is exceeded (default: auto)",
     )
     search_parser.add_argument(
         "--allow-truncate",

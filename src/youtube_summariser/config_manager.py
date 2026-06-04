@@ -8,6 +8,8 @@ from typing import Any, Optional
 
 import yaml
 
+from .local_llm import DEFAULT_HF_MODEL_ID
+
 
 def get_config_dir() -> Path:
     """
@@ -229,8 +231,12 @@ def _configure_local(config: dict[str, Any], existing_config: dict[str, Any]) ->
     existing_max_tokens = str(existing_local.get("max_tokens", 512))
     existing_max_input_tokens = str(existing_local.get("max_input_tokens", 1536))
 
-    print("Local provider runs an extracted Hugging Face model directory or .tar.gz archive.")
-    model_path = prompt_with_default("Model path", existing_path)
+    print(
+        "Local provider runs a Hugging Face repo ID, an extracted model directory, "
+        "or a .tar.gz archive."
+    )
+    print(f"Default public model: {DEFAULT_HF_MODEL_ID}")
+    model_path = prompt_with_default("Model path or Hugging Face repo ID", existing_path)
     max_tokens = prompt_with_default("Max output tokens", existing_max_tokens)
     max_input_tokens = prompt_with_default("Max input tokens", existing_max_input_tokens)
 

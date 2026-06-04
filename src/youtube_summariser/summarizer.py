@@ -85,8 +85,8 @@ def summarize_transcript(
     """
     Summarize a transcript with single-shot or map-reduce behavior.
 
-    Long local-model prompts are routed through map-reduce by default so the
-    backend does not silently discard most of the transcript.
+    Prompts are routed through map-reduce only when the selected model reports
+    a prompt-token budget and the full transcript would exceed it.
     """
     strategy = _normalize_strategy(summary_strategy)
     _set_truncation_allowed(llm, allow_truncate)
@@ -104,7 +104,8 @@ def summarize_transcript(
                 "This transcript is too long for the selected model context "
                 f"({full_prompt_tokens:,} input tokens, limit {max_input_tokens:,}). "
                 "Use the default auto mode or pass --summary-strategy map-reduce for full "
-                "long-video summarization. For a quick partial smoke test, pass --allow-truncate."
+                "long-video summarization with this model. For a quick partial smoke test, "
+                "pass --allow-truncate."
             )
         return _run_chat(llm, SYSTEM_PROMPT, transcript, stream=stream, print_stream=stream)
 

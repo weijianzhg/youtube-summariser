@@ -3,6 +3,8 @@
 import re
 from argparse import Namespace
 
+import pytest
+
 from youtube_summariser import cli
 
 
@@ -169,3 +171,54 @@ class TestTitlePlumbing:
 
         assert captured["provider"] == "local"
         assert captured["config"]["local"]["model_path"] == str(local_model)
+
+    def test_create_llm_from_args_uses_default_hf_model_with_local_flag(self, monkeypatch):
+        """Passing --local should select the default public Hugging Face model."""
+        captured = {}
+
+        class CapturingLLMClient:
+            def __init__(self, config=None, provider=None):
+                captured["config"] = config
+                captured["provider"] = provider
+
+        monkeypatch.setattr(cli, "LLMClient", CapturingLLMClient)
+        monkeypatch.setattr(cli, "load_config", lambda: {"provider": "anthropic", "local": {}})
+
+        args = Namespace(provider=None, local=True, local_model=None)
+
+        cli.create_llm_from_args(args)
+
+        assert captured["provider"] == "local"
+        assert captured["config"]["local"]["model_path"] == cli.DEFAULT_HF_MODEL_ID
+
+    def test_create_llm_from_args_prefers_explicit_local_model(self, monkeypatch):
+        """A specific --local-model should override the default --local repo."""
+        captured = {}
+
+        class CapturingLLMClient:
+            def __init__(self, config=None, provider=None):
+                captured["config"] = config
+                captured["provider"] = provider
+
+        monkeypatch.setattr(cli, "LLMClient", CapturingLLMClient)
+        monkeypatch.setattr(cli, "load_config", lambda: {"provider": "anthropic", "local": {}})
+
+        args = Namespace(
+            provider=None,
+            local=True,
+            local_model="weijianzhg/custom-youtube-model",
+        )
+
+        cli.create_llm_from_args(args)
+
+        assert captured["provider"] == "local"
+        assert captured["config"]["local"]["model_path"] == "weijianzhg/custom-youtube-model"
+
+    def test_create_llm_from_args_rejects_conflicting_provider(self):
+        """Local model flags should not be silently ignored by a hosted provider."""
+        args = Namespace(provider="anthropic", local=True, local_model=None)
+
+        with pytest.raises(ValueError) as exc_info:
+            cli.create_llm_from_args(args)
+
+        assert "--local" in str(exc_info.value)

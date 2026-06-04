@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import re
 import shutil
 import tarfile
 import threading
@@ -15,6 +16,7 @@ from typing import Any, Iterator
 logger = logging.getLogger(__name__)
 
 LOCAL_MODEL_ENV = "YOUTUBE_SUMMARISER_LOCAL_MODEL"
+DEFAULT_HF_MODEL_ID = "weijianzhg/youtube-summariser-qwen3.5-4b"
 DEFAULT_CACHE_DIR = "~/.cache/youtube-summariser/models"
 ARCHIVE_SUFFIXES = (".tar.gz", ".tgz", ".tar")
 
@@ -24,7 +26,8 @@ class LocalTransformersClient:
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
-        self.model_path = self._configured_model_path()
+        self.model_reference = self._configured_model_reference()
+        self.model_path = self._configured_model_path(self.model_reference)
         self._model_dir: Path | None = None
         self._model = None
         self._tokenizer = None
@@ -36,7 +39,9 @@ class LocalTransformersClient:
         configured_label = self.config.get("model")
         if configured_label:
             return str(configured_label)
-        return _strip_archive_suffix(self.model_path.name)
+        if self.model_path is not None:
+            return _strip_archive_suffix(self.model_path.name)
+        return self.model_reference
 
     def get_max_input_tokens(self) -> int:
         """Return the configured prompt-token limit."""
@@ -96,24 +101,33 @@ class LocalTransformersClient:
         if errors:
             raise RuntimeError(f"Local model generation failed: {errors[0]}") from errors[0]
 
-    def _configured_model_path(self) -> Path:
-        raw_path = (
+    def _configured_model_reference(self) -> str:
+        raw_reference = (
             os.environ.get(LOCAL_MODEL_ENV)
             or self.config.get("model_path")
             or self.config.get("path")
         )
-        if not raw_path:
+        if not raw_reference or not str(raw_reference).strip():
             raise ValueError(
-                "Local model path not configured. Set YOUTUBE_SUMMARISER_LOCAL_MODEL, "
-                "add local.model_path to config.yaml, or pass --local-model."
+                "Local model path not configured. Pass --local to download the default model, "
+                "set YOUTUBE_SUMMARISER_LOCAL_MODEL, add local.model_path to config.yaml, "
+                "or pass --local-model."
             )
+        return str(raw_reference).strip()
 
-        model_path = _expand_path(str(raw_path))
+    def _configured_model_path(self, reference: str) -> Path | None:
+        model_path = _expand_path(reference)
         if not model_path.exists():
-            raise ValueError(f"Local model path does not exist: {model_path}")
+            if _is_hf_repo_id(reference):
+                return None
+            raise ValueError(
+                f"Local model path does not exist: {model_path}. "
+                f"To download from Hugging Face, pass a repo ID such as {DEFAULT_HF_MODEL_ID}."
+            )
         if model_path.is_file() and not _is_archive(model_path):
             raise ValueError(
-                "Local model path must be an extracted model directory or a .tar/.tar.gz archive: "
+                "Local model path must be a Hugging Face repo ID, an extracted model directory, "
+                "or a .tar/.tar.gz archive: "
                 f"{model_path}"
             )
         return model_path
@@ -163,9 +177,39 @@ class LocalTransformersClient:
         return tokenizer
 
     def _resolve_model_dir(self) -> Path:
+        if self.model_path is None:
+            return self._find_model_root(self._download_hf_model(self.model_reference))
         if self.model_path.is_dir():
             return self._find_model_root(self.model_path)
         return self._find_model_root(self._extract_model_archive(self.model_path))
+
+    def _download_hf_model(self, repo_id: str) -> Path:
+        try:
+            from huggingface_hub import snapshot_download
+        except ImportError as exc:
+            raise ValueError(_missing_local_dependencies_message()) from exc
+
+        cache_root = _expand_path(str(self.config.get("cache_dir", DEFAULT_CACHE_DIR)))
+        cache_root.mkdir(parents=True, exist_ok=True)
+        snapshot_kwargs: dict[str, Any] = {
+            "repo_id": repo_id,
+            "cache_dir": str(cache_root / "huggingface"),
+            "local_files_only": bool(self.config.get("local_files_only", False)),
+        }
+        revision = self.config.get("revision")
+        if revision:
+            snapshot_kwargs["revision"] = str(revision)
+
+        logger.info("Downloading local model %s from Hugging Face Hub", repo_id)
+        try:
+            model_dir = Path(snapshot_download(**snapshot_kwargs))
+        except Exception as exc:
+            raise ValueError(
+                f"Could not download local model '{repo_id}' from Hugging Face. "
+                "Check the repo ID and your network connection. If you meant a local path, "
+                f"make sure it exists. Details: {exc}"
+            ) from exc
+        return model_dir
 
     def _extract_model_archive(self, archive_path: Path) -> Path:
         cache_root = _expand_path(str(self.config.get("cache_dir", DEFAULT_CACHE_DIR)))
@@ -428,6 +472,10 @@ def _expand_path(path_value: str) -> Path:
 
 def _is_archive(path: Path) -> bool:
     return any(str(path).endswith(suffix) for suffix in ARCHIVE_SUFFIXES)
+
+
+def _is_hf_repo_id(reference: str) -> bool:
+    return bool(re.fullmatch(r"[A-Za-z0-9][\w.-]*/[A-Za-z0-9][\w.-]*", reference))
 
 
 def _strip_archive_suffix(name: str) -> str:
