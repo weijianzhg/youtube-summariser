@@ -2,6 +2,7 @@
 
 import logging
 import os
+from contextlib import contextmanager
 from importlib import resources
 from typing import Iterator, Optional
 
@@ -13,6 +14,11 @@ from .local_llm import LOCAL_MODEL_ENV, LocalTransformersClient
 logger = logging.getLogger(__name__)
 
 SUPPORTED_PROVIDERS = ("openai", "anthropic", "openrouter", "local")
+SUMMARY_PHASE_TOKEN_KEYS = {
+    "map": "map_max_tokens",
+    "intermediate": "intermediate_max_tokens",
+    "final": "final_max_tokens",
+}
 
 
 def load_config() -> dict:
@@ -163,6 +169,41 @@ class LLMClient:
         """Allow or reject backend truncation where the provider supports it."""
         if self.provider == "local" and self._client is not None:
             self._client.set_truncation_allowed(allowed)
+
+    def get_summary_phase_max_tokens(self, phase: str) -> int | None:
+        """Return an optional max-token override for a summarization phase."""
+        key = SUMMARY_PHASE_TOKEN_KEYS.get(phase)
+        if key is None:
+            return None
+        provider_config = self.config.get(self.provider, {})
+        value = provider_config.get(key)
+        if value is None:
+            return None
+        return int(value)
+
+    @contextmanager
+    def temporary_max_tokens(self, max_tokens: int):
+        """Temporarily override generation length for one model call."""
+        provider_config = self.config.setdefault(self.provider, {})
+        targets = [provider_config]
+        client_config = getattr(self._client, "config", None)
+        if isinstance(client_config, dict) and client_config is not provider_config:
+            targets.append(client_config)
+
+        states = [
+            (target, "max_tokens" in target, target.get("max_tokens")) for target in targets
+        ]
+        for target in targets:
+            target["max_tokens"] = int(max_tokens)
+
+        try:
+            yield
+        finally:
+            for target, had_value, old_value in states:
+                if had_value:
+                    target["max_tokens"] = old_value
+                else:
+                    target.pop("max_tokens", None)
 
     def chat(self, system_prompt: str, user_message: str) -> str:
         """

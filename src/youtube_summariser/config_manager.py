@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 import yaml
 
-from .local_llm import DEFAULT_HF_MODEL_ID
+from .local_llm import DEFAULT_GGUF_MODEL_FILE, DEFAULT_HF_MODEL_ID
 
 
 def get_config_dir() -> Path:
@@ -144,6 +144,12 @@ def run_init() -> None:
         config["openrouter"]["max_tokens"] = 3000
     if "max_tokens" not in config["local"]:
         config["local"]["max_tokens"] = 512
+    if "map_max_tokens" not in config["local"]:
+        config["local"]["map_max_tokens"] = 256
+    if "intermediate_max_tokens" not in config["local"]:
+        config["local"]["intermediate_max_tokens"] = 256
+    if "final_max_tokens" not in config["local"]:
+        config["local"]["final_max_tokens"] = 1024
     if "max_input_tokens" not in config["local"]:
         config["local"]["max_input_tokens"] = 1536
     if "cache_dir" not in config["local"]:
@@ -232,11 +238,14 @@ def _configure_local(config: dict[str, Any], existing_config: dict[str, Any]) ->
     existing_max_input_tokens = str(existing_local.get("max_input_tokens", 1536))
 
     print(
-        "Local provider runs a Hugging Face repo ID, an extracted model directory, "
+        "Local provider runs a GGUF/llama.cpp model, a Hugging Face Transformers model, "
         "or a .tar.gz archive."
     )
-    print(f"Default public model: {DEFAULT_HF_MODEL_ID}")
-    model_path = prompt_with_default("Model path or Hugging Face repo ID", existing_path)
+    print(f"Default public model: {DEFAULT_HF_MODEL_ID}:{DEFAULT_GGUF_MODEL_FILE}")
+    model_path = prompt_with_default(
+        "Model path, .gguf file, or Hugging Face repo ID",
+        existing_path,
+    )
     max_tokens = prompt_with_default("Max output tokens", existing_max_tokens)
     max_input_tokens = prompt_with_default("Max input tokens", existing_max_input_tokens)
 

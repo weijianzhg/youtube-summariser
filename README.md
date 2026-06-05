@@ -99,12 +99,16 @@ youtube-summariser "https://youtu.be/VIDEO_ID" --provider openai
 # Use OpenRouter with access to 300+ models
 youtube-summariser "https://youtu.be/VIDEO_ID" --provider openrouter
 
-# Download and use the default local Qwen fine-tune
+# Download and use the default local Qwen GGUF Q4_K_M fine-tune
 youtube-summariser "https://youtu.be/VIDEO_ID" --local
+
+# Use the higher-quality Q5_K_M GGUF variant
+youtube-summariser "https://youtu.be/VIDEO_ID" \
+  --local-model weijianzhg/youtube-summariser-qwen3.5-4b-GGUF:Q5_K_M
 
 # Use a specific local model repo/archive without editing config
 youtube-summariser "https://youtu.be/VIDEO_ID" \
-  --local-model weijianzhg/youtube-summariser-qwen3.5-4b
+  --local-model owner/model-name
 
 # Use a local model archive from disk
 youtube-summariser "https://youtu.be/VIDEO_ID" \
@@ -125,14 +129,18 @@ pip install -e ".[local]"
 Then either pass a model reference per command with `--local-model`, set `YOUTUBE_SUMMARISER_LOCAL_MODEL`, or save it in `~/.youtube-summariser/config.yaml`:
 
 ```bash
-# Downloads weijianzhg/youtube-summariser-qwen3.5-4b on first use, then reuses the cache
+# Downloads the Q4_K_M GGUF file on first use, then reuses the cache
 youtube-summariser "https://youtu.be/VIDEO_ID" --local
 
-# Equivalent explicit repo ID form
+# Equivalent explicit GGUF repo form
 youtube-summariser "https://youtu.be/VIDEO_ID" \
-  --local-model weijianzhg/youtube-summariser-qwen3.5-4b
+  --local-model weijianzhg/youtube-summariser-qwen3.5-4b-GGUF:Q4_K_M
 
-# Or use another compatible Hugging Face model repo
+# Use the larger Q5_K_M GGUF file
+youtube-summariser "https://youtu.be/VIDEO_ID" \
+  --local-model weijianzhg/youtube-summariser-qwen3.5-4b-GGUF:Q5_K_M
+
+# Or use another compatible GGUF or Transformers Hugging Face model repo
 youtube-summariser "https://youtu.be/VIDEO_ID" \
   --local-model owner/model-name
 ```
@@ -140,12 +148,16 @@ youtube-summariser "https://youtu.be/VIDEO_ID" \
 ```yaml
 provider: local
 local:
-  model_path: weijianzhg/youtube-summariser-qwen3.5-4b
+  model_path: weijianzhg/youtube-summariser-qwen3.5-4b-GGUF
+  model_file: youtube-summariser-qwen3.5-4b.Q4_K_M.gguf
   max_tokens: 512
+  map_max_tokens: 256
+  intermediate_max_tokens: 256
+  final_max_tokens: 1024
   max_input_tokens: 1536
 ```
 
-The local provider accepts a Hugging Face model repo ID, an extracted Hugging Face model directory, or a `.tar`/`.tar.gz` archive. Hub models and archives are cached under `~/.cache/youtube-summariser/models`; the default public checkpoint is about 8.5 GB to download.
+The local provider accepts a GGUF Hub repo, a local `.gguf` file, a Hugging Face Transformers repo ID, an extracted Transformers model directory, or a `.tar`/`.tar.gz` archive. Hub models and archives are cached under `~/.cache/youtube-summariser/models`; the default Q4_K_M GGUF file is about 2.5 GiB to download.
 
 Long transcripts are handled according to the selected model's token budget. In the default
 `--summary-strategy auto` mode, the CLI uses a single model call when the transcript fits the
@@ -189,8 +201,8 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 | `-o, --output`       | Specify output filename (default: `YYYY-MM-DD__video-title-slug__video-id.md`) |
 | `--no-save`          | Print summary to terminal without saving to file                       |
 | `--provider`         | LLM provider to use: `openai`, `anthropic`, `openrouter`, or `local`   |
-| `--local`            | Download and use the default local Qwen fine-tune from Hugging Face    |
-| `--local-model`      | Hugging Face repo ID, local Transformers model directory, or archive   |
+| `--local`            | Download and use the default local Qwen GGUF Q4_K_M fine-tune from Hugging Face |
+| `--local-model`      | Hugging Face repo ID, local `.gguf` file, Transformers directory, or archive |
 | `--summary-strategy` | Summarization strategy: `auto`, `single`, or `map-reduce`              |
 | `--allow-truncate`   | Allow an explicit partial smoke-test summary when input exceeds context |
 | `--no-stream`        | Disable streaming output                                               |

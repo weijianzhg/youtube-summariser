@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Literal
 
@@ -28,11 +29,11 @@ Preserve any timestamps from the transcript. Be concise; omit filler and tangent
 
 MAP_SYSTEM_PROMPT = """Summarize one chunk of a timestamped YouTube transcript.
 
-Return compact markdown with:
+Return compact markdown, at most 120 words, with:
 - Time range covered, if visible
-- 3-6 important points with timestamps
-- Notable quotes or examples
-- Any unresolved context that later chunks may need
+- 3-5 important points with timestamps
+- Only standout quotes or examples
+- Any context later chunks need
 
 Preserve timestamps and omit filler."""
 
@@ -58,8 +59,9 @@ Remove duplicates and keep the final answer concise."""
 
 INTERMEDIATE_REDUCE_SYSTEM_PROMPT = """Condense these chunk summaries into a smaller bridge summary.
 
+Return at most 160 words.
 Keep the main chronology, timestamps, decisions, examples, quotes, and unresolved context.
-Remove repetition and keep the result compact."""
+Remove repetition aggressively. Do not preserve section headings unless they add information."""
 
 UNKNOWN_CONTEXT_PROMPT_BUDGET = 6000
 MIN_PROMPT_BUDGET = 64
@@ -127,10 +129,19 @@ def summarize_long_transcript(transcript: str, llm, stream: bool = True) -> str:
     )
 
     chunk_summaries: list[str] = []
+    map_max_tokens = _phase_max_tokens(llm, "map")
     for chunk in chunks:
         print(f"Summarizing chunk {chunk.index}/{chunk.total}...")
         user_message = f"Transcript chunk {chunk.index}/{chunk.total}:\n\n{chunk.text}"
-        chunk_summaries.append(_run_chat(llm, MAP_SYSTEM_PROMPT, user_message, stream=False))
+        chunk_summaries.append(
+            _run_chat(
+                llm,
+                MAP_SYSTEM_PROMPT,
+                user_message,
+                stream=False,
+                max_tokens=map_max_tokens,
+            )
+        )
 
     return _reduce_summaries(chunk_summaries, llm, stream=stream)
 
@@ -196,10 +207,18 @@ def _reduce_summaries(
     prompt_budget = _chunk_prompt_budget(llm)
     combined = _format_summaries(summaries)
     if _prompt_fits(llm, REDUCE_SYSTEM_PROMPT, combined, prompt_budget):
-        return _run_chat(llm, REDUCE_SYSTEM_PROMPT, combined, stream=stream, print_stream=stream)
+        return _run_chat(
+            llm,
+            REDUCE_SYSTEM_PROMPT,
+            combined,
+            stream=stream,
+            print_stream=stream,
+            max_tokens=_phase_max_tokens(llm, "final"),
+        )
 
     batches = _batch_summaries(summaries, llm, INTERMEDIATE_REDUCE_SYSTEM_PROMPT, prompt_budget)
     intermediate: list[str] = []
+    intermediate_max_tokens = _phase_max_tokens(llm, "intermediate")
     for index, batch in enumerate(batches, start=1):
         print(f"Reducing summary batch {index}/{len(batches)}...")
         intermediate.append(
@@ -208,6 +227,7 @@ def _reduce_summaries(
                 INTERMEDIATE_REDUCE_SYSTEM_PROMPT,
                 _format_summaries(batch),
                 stream=False,
+                max_tokens=intermediate_max_tokens,
             )
         )
 
@@ -272,14 +292,18 @@ def _run_chat(
     user_message: str,
     stream: bool,
     print_stream: bool = False,
+    max_tokens: int | None = None,
 ) -> str:
-    if stream:
-        return _run_streaming_chat(llm, system_prompt, user_message, print_stream=print_stream)
+    with _temporary_max_tokens(llm, max_tokens):
+        if stream:
+            return _run_streaming_chat(
+                llm, system_prompt, user_message, print_stream=print_stream
+            )
 
-    try:
-        return llm.chat(system_prompt, user_message)
-    except NotImplementedError:
-        return "".join(llm.stream_chat(system_prompt, user_message))
+        try:
+            return llm.chat(system_prompt, user_message)
+        except NotImplementedError:
+            return "".join(llm.stream_chat(system_prompt, user_message))
 
 
 def _run_streaming_chat(llm, system_prompt: str, user_message: str, print_stream: bool) -> str:
@@ -349,6 +373,26 @@ def _set_truncation_allowed(llm, allowed: bool) -> None:
     setter = getattr(llm, "set_truncation_allowed", None)
     if callable(setter):
         setter(allowed)
+
+
+def _phase_max_tokens(llm, phase: str) -> int | None:
+    getter = getattr(llm, "get_summary_phase_max_tokens", None)
+    if not callable(getter):
+        return None
+    value = getter(phase)
+    if value is None:
+        return None
+    max_tokens = int(value)
+    return max_tokens if max_tokens > 0 else None
+
+
+def _temporary_max_tokens(llm, max_tokens: int | None):
+    if max_tokens is None or max_tokens <= 0:
+        return nullcontext()
+    manager = getattr(llm, "temporary_max_tokens", None)
+    if callable(manager):
+        return manager(max_tokens)
+    return nullcontext()
 
 
 def _normalize_strategy(strategy: str) -> SummaryStrategy:

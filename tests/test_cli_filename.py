@@ -162,7 +162,11 @@ class TestTitlePlumbing:
                 captured["provider"] = provider
 
         monkeypatch.setattr(cli, "LLMClient", CapturingLLMClient)
-        monkeypatch.setattr(cli, "load_config", lambda: {"provider": "anthropic", "local": {}})
+        monkeypatch.setattr(
+            cli,
+            "load_config",
+            lambda: {"provider": "anthropic", "local": {"model_file": "stale.gguf"}},
+        )
 
         local_model = tmp_path / "model.tar.gz"
         args = Namespace(provider=None, local_model=str(local_model))
@@ -182,7 +186,11 @@ class TestTitlePlumbing:
                 captured["provider"] = provider
 
         monkeypatch.setattr(cli, "LLMClient", CapturingLLMClient)
-        monkeypatch.setattr(cli, "load_config", lambda: {"provider": "anthropic", "local": {}})
+        monkeypatch.setattr(
+            cli,
+            "load_config",
+            lambda: {"provider": "anthropic", "local": {"model_file": "stale.gguf"}},
+        )
 
         args = Namespace(provider=None, local=True, local_model=None)
 
@@ -190,6 +198,7 @@ class TestTitlePlumbing:
 
         assert captured["provider"] == "local"
         assert captured["config"]["local"]["model_path"] == cli.DEFAULT_HF_MODEL_ID
+        assert captured["config"]["local"]["model_file"] == cli.DEFAULT_GGUF_MODEL_FILE
 
     def test_create_llm_from_args_prefers_explicit_local_model(self, monkeypatch):
         """A specific --local-model should override the default --local repo."""
@@ -201,7 +210,11 @@ class TestTitlePlumbing:
                 captured["provider"] = provider
 
         monkeypatch.setattr(cli, "LLMClient", CapturingLLMClient)
-        monkeypatch.setattr(cli, "load_config", lambda: {"provider": "anthropic", "local": {}})
+        monkeypatch.setattr(
+            cli,
+            "load_config",
+            lambda: {"provider": "anthropic", "local": {"model_file": "stale.gguf"}},
+        )
 
         args = Namespace(
             provider=None,
@@ -213,6 +226,7 @@ class TestTitlePlumbing:
 
         assert captured["provider"] == "local"
         assert captured["config"]["local"]["model_path"] == "weijianzhg/custom-youtube-model"
+        assert "model_file" not in captured["config"]["local"]
 
     def test_create_llm_from_args_rejects_conflicting_provider(self):
         """Local model flags should not be silently ignored by a hosted provider."""

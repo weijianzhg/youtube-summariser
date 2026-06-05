@@ -9,16 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Local Transformers provider support with `--local-model`, local config, and `YOUTUBE_SUMMARISER_LOCAL_MODEL`
-- `--local` shortcut for the public Hugging Face checkpoint `weijianzhg/youtube-summariser-qwen3.5-4b`
+- `--local` shortcut for the public Q4_K_M GGUF checkpoint `weijianzhg/youtube-summariser-qwen3.5-4b-GGUF`
 - Hugging Face Hub repo ID support for local models, alongside extracted model directories and `.tar`/`.tar.gz` archives
+- GGUF/llama.cpp local backend support for `.gguf` files and `*-GGUF` Hugging Face repos
 - Automatic long-video summarization with `--summary-strategy auto`, `single`, and `map-reduce`
 - Token-aware transcript chunking, chunk summary synthesis, and recursive reduce for over-budget local prompts
 - Explicit `--allow-truncate` flag for intentional partial smoke-test summaries
 
 ### Changed
+- `--local` now defaults to the Q4_K_M GGUF artifact `weijianzhg/youtube-summariser-qwen3.5-4b-GGUF`
+- Local map-reduce now uses separate map, intermediate reduce, and final synthesis token caps so long videos can keep intermediate summaries compact while allowing a fuller final answer
 - Long transcripts now use map-reduce only when the selected model's context limit requires it
 - Single-shot mode now fails clearly on over-budget prompts unless truncation is explicitly allowed
-- Local model dependencies now include `huggingface-hub` for direct Hub downloads
+- Local model dependencies now include `huggingface-hub` for direct Hub downloads and `llama-cpp-python` for GGUF inference
 - README, CLI help, and interactive config text now document local Hugging Face model usage
 
 ## [0.6.3] - 2026-04-13

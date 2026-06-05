@@ -223,3 +223,36 @@ class TestLLMClientAPIKeyValidation:
         client = LLMClient(config=config, provider="local")
         assert client.provider == "local"
         assert client.get_model() == "env-model"
+
+    def test_local_provider_exposes_summary_phase_token_caps(self, tmp_path, monkeypatch):
+        """Map-reduce can use per-phase generation caps for local models."""
+        monkeypatch.delenv("YOUTUBE_SUMMARISER_LOCAL_MODEL", raising=False)
+        model_dir = tmp_path / "model"
+        model_dir.mkdir()
+        config = {
+            "provider": "local",
+            "openai": {},
+            "anthropic": {},
+            "openrouter": {},
+            "local": {
+                "model_path": str(model_dir),
+                "max_tokens": 512,
+                "map_max_tokens": 111,
+                "intermediate_max_tokens": 222,
+                "final_max_tokens": 333,
+            },
+        }
+
+        client = LLMClient(config=config, provider="local")
+
+        assert client.get_summary_phase_max_tokens("map") == 111
+        assert client.get_summary_phase_max_tokens("intermediate") == 222
+        assert client.get_summary_phase_max_tokens("final") == 333
+        assert client.get_summary_phase_max_tokens("unknown") is None
+
+        with client.temporary_max_tokens(99):
+            assert client.get_max_tokens() == 99
+            assert client._client.config["max_tokens"] == 99
+
+        assert client.get_max_tokens() == 512
+        assert client._client.config["max_tokens"] == 512

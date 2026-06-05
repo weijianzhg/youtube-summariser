@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 from . import __version__
 from .config_manager import run_init
 from .llm_client import SUPPORTED_PROVIDERS, LLMClient, load_config
-from .local_llm import DEFAULT_HF_MODEL_ID
+from .local_llm import DEFAULT_GGUF_MODEL_FILE, DEFAULT_HF_MODEL_ID
 from .summarizer import SYSTEM_PROMPT as SYSTEM_PROMPT
 from .summarizer import summarize_transcript as summarize_transcript
 from .youtube_helper import YouTubeHelper
@@ -250,7 +250,12 @@ def create_llm_from_args(args) -> LLMClient:
     config = None
     if local_model or use_default_local:
         config = copy.deepcopy(load_config())
-        config.setdefault("local", {})["model_path"] = local_model or DEFAULT_HF_MODEL_ID
+        local_config = config.setdefault("local", {})
+        local_config["model_path"] = local_model or DEFAULT_HF_MODEL_ID
+        if local_model:
+            local_config.pop("model_file", None)
+        elif use_default_local:
+            local_config["model_file"] = DEFAULT_GGUF_MODEL_FILE
     if config is None:
         return LLMClient(provider=provider)
     return LLMClient(config=config, provider=provider)
@@ -277,11 +282,14 @@ def add_summarise_args(parser):
     parser.add_argument(
         "--local",
         action="store_true",
-        help=f"Use the default local Qwen model from Hugging Face ({DEFAULT_HF_MODEL_ID})",
+        help=(
+            "Use the default local Qwen GGUF Q4_K_M model from Hugging Face "
+            f"({DEFAULT_HF_MODEL_ID})"
+        ),
     )
     parser.add_argument(
         "--local-model",
-        help="Path, .tar/.tar.gz archive, or Hugging Face repo ID for a local Transformers model",
+        help="Path, .gguf file, .tar/.tar.gz archive, or Hugging Face repo ID for a local model",
         default=None,
     )
     parser.add_argument(
@@ -382,11 +390,14 @@ Examples:
     search_parser.add_argument(
         "--local",
         action="store_true",
-        help=f"Use the default local Qwen model from Hugging Face ({DEFAULT_HF_MODEL_ID})",
+        help=(
+            "Use the default local Qwen GGUF Q4_K_M model from Hugging Face "
+            f"({DEFAULT_HF_MODEL_ID})"
+        ),
     )
     search_parser.add_argument(
         "--local-model",
-        help="Path, .tar/.tar.gz archive, or Hugging Face repo ID for a local Transformers model",
+        help="Path, .gguf file, .tar/.tar.gz archive, or Hugging Face repo ID for a local model",
         default=None,
     )
     search_parser.add_argument(

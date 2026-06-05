@@ -1,5 +1,7 @@
 """Tests for long-video summarization strategies."""
 
+from contextlib import contextmanager
+
 import pytest
 
 from youtube_summariser.summarizer import (
@@ -17,10 +19,13 @@ class FakeLLM:
 
     provider = "local"
 
-    def __init__(self, max_input_tokens=180):
+    def __init__(self, max_input_tokens=180, phase_max_tokens=None):
         self.max_input_tokens = max_input_tokens
+        self.phase_max_tokens = phase_max_tokens or {}
+        self.active_max_tokens = None
         self.truncation_allowed = None
         self.chat_calls = []
+        self.chat_max_tokens = []
         self.stream_calls = []
 
     def get_max_input_tokens(self):
@@ -32,8 +37,21 @@ class FakeLLM:
     def set_truncation_allowed(self, allowed):
         self.truncation_allowed = allowed
 
+    def get_summary_phase_max_tokens(self, phase):
+        return self.phase_max_tokens.get(phase)
+
+    @contextmanager
+    def temporary_max_tokens(self, max_tokens):
+        old_max_tokens = self.active_max_tokens
+        self.active_max_tokens = max_tokens
+        try:
+            yield
+        finally:
+            self.active_max_tokens = old_max_tokens
+
     def chat(self, system_prompt, user_message):
         self.chat_calls.append((system_prompt, user_message))
+        self.chat_max_tokens.append((system_prompt, self.active_max_tokens))
         if system_prompt == MAP_SYSTEM_PROMPT:
             return "chunk summary with [00:01]"
         if system_prompt == INTERMEDIATE_REDUCE_SYSTEM_PROMPT:
@@ -149,6 +167,7 @@ def test_reduce_recurses_when_chunk_summaries_exceed_budget():
     class VerboseMapLLM(FakeLLM):
         def chat(self, system_prompt, user_message):
             self.chat_calls.append((system_prompt, user_message))
+            self.chat_max_tokens.append((system_prompt, self.active_max_tokens))
             if system_prompt == MAP_SYSTEM_PROMPT:
                 return " ".join(f"detail{index}" for index in range(40))
             if system_prompt == INTERMEDIATE_REDUCE_SYSTEM_PROMPT:
@@ -171,3 +190,38 @@ def test_reduce_recurses_when_chunk_summaries_exceed_budget():
     ]
     assert summary == "final reduced summary"
     assert intermediate_calls
+
+
+def test_map_reduce_uses_phase_specific_token_caps():
+    class VerboseMapLLM(FakeLLM):
+        def chat(self, system_prompt, user_message):
+            self.chat_calls.append((system_prompt, user_message))
+            self.chat_max_tokens.append((system_prompt, self.active_max_tokens))
+            if system_prompt == MAP_SYSTEM_PROMPT:
+                return " ".join(f"detail{index}" for index in range(40))
+            if system_prompt == INTERMEDIATE_REDUCE_SYSTEM_PROMPT:
+                return "bridge summary"
+            if system_prompt == REDUCE_SYSTEM_PROMPT:
+                return "final reduced summary"
+            return "single summary"
+
+    llm = VerboseMapLLM(
+        max_input_tokens=130,
+        phase_max_tokens={"map": 111, "intermediate": 222, "final": 333},
+    )
+
+    summary = summarize_transcript(
+        _transcript(line_count=18, words_per_line=14),
+        llm,
+        stream=False,
+        summary_strategy="map-reduce",
+    )
+
+    limits_by_prompt = {}
+    for system_prompt, max_tokens in llm.chat_max_tokens:
+        limits_by_prompt.setdefault(system_prompt, set()).add(max_tokens)
+
+    assert summary == "final reduced summary"
+    assert limits_by_prompt[MAP_SYSTEM_PROMPT] == {111}
+    assert limits_by_prompt[INTERMEDIATE_REDUCE_SYSTEM_PROMPT] == {222}
+    assert limits_by_prompt[REDUCE_SYSTEM_PROMPT] == {333}
