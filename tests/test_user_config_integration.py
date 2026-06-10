@@ -132,3 +132,8 @@ anthropic:
         assert "provider" in config
         assert "openai" in config
         assert "anthropic" in config
+        assert config["local"]["map_max_tokens"] == 180
+        assert config["local"]["intermediate_max_tokens"] == 180
+        assert config["local"]["final_max_tokens"] == 1200
+        assert config["local"]["max_input_tokens"] == 8192
+        assert config["local"]["n_ctx"] == 9600

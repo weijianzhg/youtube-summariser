@@ -8,7 +8,11 @@ from typing import Any, Optional
 
 import yaml
 
-from .local_llm import DEFAULT_GGUF_MODEL_FILE, DEFAULT_HF_MODEL_ID
+from .local_llm import (
+    DEFAULT_GGUF_MODEL_FILE,
+    DEFAULT_HF_MODEL_ID,
+    DEFAULT_LOCAL_MAX_INPUT_TOKENS,
+)
 
 
 def get_config_dir() -> Path:
@@ -145,13 +149,15 @@ def run_init() -> None:
     if "max_tokens" not in config["local"]:
         config["local"]["max_tokens"] = 512
     if "map_max_tokens" not in config["local"]:
-        config["local"]["map_max_tokens"] = 256
+        config["local"]["map_max_tokens"] = 180
     if "intermediate_max_tokens" not in config["local"]:
-        config["local"]["intermediate_max_tokens"] = 256
+        config["local"]["intermediate_max_tokens"] = 180
     if "final_max_tokens" not in config["local"]:
-        config["local"]["final_max_tokens"] = 1024
+        config["local"]["final_max_tokens"] = 1200
     if "max_input_tokens" not in config["local"]:
-        config["local"]["max_input_tokens"] = 1536
+        config["local"]["max_input_tokens"] = DEFAULT_LOCAL_MAX_INPUT_TOKENS
+    if "n_ctx" not in config["local"]:
+        config["local"]["n_ctx"] = 9600
     if "cache_dir" not in config["local"]:
         config["local"]["cache_dir"] = "~/.cache/youtube-summariser/models"
     if "device" not in config["local"]:
@@ -235,7 +241,9 @@ def _configure_local(config: dict[str, Any], existing_config: dict[str, Any]) ->
     existing_local = existing_config.get("local", {})
     existing_path = existing_local.get("model_path", "")
     existing_max_tokens = str(existing_local.get("max_tokens", 512))
-    existing_max_input_tokens = str(existing_local.get("max_input_tokens", 1536))
+    existing_max_input_tokens = str(
+        existing_local.get("max_input_tokens", DEFAULT_LOCAL_MAX_INPUT_TOKENS)
+    )
 
     print(
         "Local provider runs a GGUF/llama.cpp model, a Hugging Face Transformers model, "

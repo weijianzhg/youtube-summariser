@@ -22,6 +22,7 @@ DEFAULT_GGUF_MODEL_ID = "weijianzhg/youtube-summariser-qwen3.5-4b-GGUF"
 DEFAULT_GGUF_MODEL_FILE = "youtube-summariser-qwen3.5-4b.Q4_K_M.gguf"
 DEFAULT_HF_MODEL_ID = DEFAULT_GGUF_MODEL_ID
 DEFAULT_CACHE_DIR = "~/.cache/youtube-summariser/models"
+DEFAULT_LOCAL_MAX_INPUT_TOKENS = 8192
 ARCHIVE_SUFFIXES = (".tar.gz", ".tgz", ".tar")
 GGUF_SUFFIX = ".gguf"
 SUMMARY_PHASE_TOKEN_KEYS = {
@@ -65,7 +66,7 @@ class LocalTransformersClient:
 
     def get_max_input_tokens(self) -> int:
         """Return the configured prompt-token limit."""
-        return int(self.config.get("max_input_tokens", 1536) or 0)
+        return int(self.config.get("max_input_tokens", DEFAULT_LOCAL_MAX_INPUT_TOKENS) or 0)
 
     def set_truncation_allowed(self, allowed: bool) -> None:
         """Control whether over-budget prompts may be truncated."""

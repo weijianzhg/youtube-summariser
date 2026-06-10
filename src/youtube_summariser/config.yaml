@@ -25,10 +25,11 @@ local:
   model_path: ""
   model_file: ""
   max_tokens: 512
-  map_max_tokens: 256
-  intermediate_max_tokens: 256
-  final_max_tokens: 1024
-  max_input_tokens: 1536
+  map_max_tokens: 180
+  intermediate_max_tokens: 180
+  final_max_tokens: 1200
+  max_input_tokens: 8192
+  n_ctx: 9600
   cache_dir: "~/.cache/youtube-summariser/models"
   device: "auto"
   torch_dtype: "auto"

@@ -151,10 +151,11 @@ local:
   model_path: weijianzhg/youtube-summariser-qwen3.5-4b-GGUF
   model_file: youtube-summariser-qwen3.5-4b.Q4_K_M.gguf
   max_tokens: 512
-  map_max_tokens: 256
-  intermediate_max_tokens: 256
-  final_max_tokens: 1024
-  max_input_tokens: 1536
+  map_max_tokens: 180
+  intermediate_max_tokens: 180
+  final_max_tokens: 1200
+  max_input_tokens: 8192
+  n_ctx: 9600
 ```
 
 The local provider accepts a GGUF Hub repo, a local `.gguf` file, a Hugging Face Transformers repo ID, an extracted Transformers model directory, or a `.tar`/`.tar.gz` archive. Hub models and archives are cached under `~/.cache/youtube-summariser/models`; the default Q4_K_M GGUF file is about 2.5 GiB to download.
@@ -163,7 +164,9 @@ Long transcripts are handled according to the selected model's token budget. In 
 `--summary-strategy auto` mode, the CLI uses a single model call when the transcript fits the
 selected model context and switches to map-reduce only when it does not. High-context hosted
 models such as Claude can stay on the single-shot path for videos that need chunking with the
-local Qwen fine-tune. Pass `--summary-strategy single --allow-truncate` only when you
+local Qwen fine-tune. The default local prompt budget is intentionally higher than the original
+short-context setting so local map-reduce uses fewer chunks on long videos. Pass
+`--summary-strategy single --allow-truncate` only when you
 intentionally want a quick partial smoke-test summary.
 
 ### Search by Title

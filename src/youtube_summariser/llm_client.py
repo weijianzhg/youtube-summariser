@@ -9,7 +9,7 @@ from typing import Iterator, Optional
 import yaml
 
 from .config_manager import load_user_config
-from .local_llm import LOCAL_MODEL_ENV, LocalTransformersClient
+from .local_llm import DEFAULT_LOCAL_MAX_INPUT_TOKENS, LOCAL_MODEL_ENV, LocalTransformersClient
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,14 @@ def load_config() -> dict:
             "openai": {"model": "gpt-5.2", "max_tokens": 3000},
             "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 3000},
             "openrouter": {"model": "anthropic/claude-sonnet-4.5", "max_tokens": 3000},
-            "local": {"max_tokens": 512, "max_input_tokens": 1536},
+            "local": {
+                "max_tokens": 512,
+                "map_max_tokens": 180,
+                "intermediate_max_tokens": 180,
+                "final_max_tokens": 1200,
+                "max_input_tokens": DEFAULT_LOCAL_MAX_INPUT_TOKENS,
+                "n_ctx": 9600,
+            },
         }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
