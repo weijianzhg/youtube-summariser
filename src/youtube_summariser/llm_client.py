@@ -197,9 +197,7 @@ class LLMClient:
         if isinstance(client_config, dict) and client_config is not provider_config:
             targets.append(client_config)
 
-        states = [
-            (target, "max_tokens" in target, target.get("max_tokens")) for target in targets
-        ]
+        states = [(target, "max_tokens" in target, target.get("max_tokens")) for target in targets]
         for target in targets:
             target["max_tokens"] = int(max_tokens)
 

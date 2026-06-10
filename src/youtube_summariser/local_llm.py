@@ -194,9 +194,7 @@ class LocalTransformersClient:
             return "gguf"
         if backend in {"gguf", "transformers", "auto"}:
             return backend
-        raise ValueError(
-            "Unsupported local backend. Use 'auto', 'gguf', or 'transformers'."
-        )
+        raise ValueError("Unsupported local backend. Use 'auto', 'gguf', or 'transformers'.")
 
     def _uses_gguf_backend(self) -> bool:
         if self._backend == "gguf":

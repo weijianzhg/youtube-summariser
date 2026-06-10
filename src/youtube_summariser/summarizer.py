@@ -296,9 +296,7 @@ def _run_chat(
 ) -> str:
     with _temporary_max_tokens(llm, max_tokens):
         if stream:
-            return _run_streaming_chat(
-                llm, system_prompt, user_message, print_stream=print_stream
-            )
+            return _run_streaming_chat(llm, system_prompt, user_message, print_stream=print_stream)
 
         try:
             return llm.chat(system_prompt, user_message)
