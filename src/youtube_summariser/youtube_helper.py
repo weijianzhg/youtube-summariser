@@ -184,6 +184,61 @@ class YouTubeHelper:
             raise Exception(f"Failed to search YouTube: {str(e)}")
 
     @staticmethod
+    def get_channel_videos(channel_url: str, limit: int = 10) -> tuple:
+        """
+        Get the latest videos from a YouTube channel.
+
+        Args:
+            channel_url: Channel URL (supports @handle, /channel/ID, /c/, /user/ forms)
+            limit: Maximum number of videos to return (latest first)
+
+        Returns:
+            Tuple of (channel_name, videos) where videos is a list of dicts:
+            - video_id: YouTube video ID
+            - title: Video title (may be None if metadata lookup fails)
+            - url: Full watch URL
+            - duration: Video duration in seconds as a string ("0" if unknown)
+
+        Raises:
+            Exception: If the channel cannot be fetched
+        """
+        from pytubefix import Channel
+
+        try:
+            if limit < 1:
+                raise ValueError("limit must be at least 1")
+
+            channel = Channel(channel_url)
+            channel_name = channel.channel_name or "Unknown Channel"
+
+            videos = []
+            for video in channel.videos:
+                if len(videos) >= limit:
+                    break
+                # Title/duration require a per-video metadata fetch; tolerate failures.
+                try:
+                    title = video.title
+                    duration = str(video.length) if video.length else "0"
+                except Exception:
+                    title = None
+                    duration = "0"
+                videos.append(
+                    {
+                        "video_id": video.video_id,
+                        "title": title,
+                        "url": video.watch_url,
+                        "duration": duration,
+                    }
+                )
+            return channel_name, videos
+
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching channel '{channel_url}': {str(e)}")
+            raise Exception(f"Failed to fetch channel: {str(e)}")
+
+    @staticmethod
     def get_video_title(video_id: str) -> str:
         """
         Get a video's title from YouTube.

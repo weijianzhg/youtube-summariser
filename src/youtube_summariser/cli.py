@@ -7,12 +7,14 @@ Both 'youtube-summariser' (British) and 'youtube-summarizer' (American) work.
 Usage:
     youtube-summarizer <youtube_url> [--output filename.md]
     youtube-summarizer search <query> [--first]
+    youtube-summarizer channel <channel_url_or_handle> [--last N]
     youtube-summarizer init
 
 Examples:
     youtube-summarizer "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     youtube-summarizer "https://youtu.be/dQw4w9WgXcQ" -o my_summary.md
     youtube-summarizer search "Python tutorial" --first
+    youtube-summarizer channel "@mkbhd" --last 5
     youtube-summarizer init
 """
 
@@ -278,6 +280,14 @@ def cmd_summarise(args):
     process_video(video_id, args.url, video_title, args, llm)
 
 
+def cmd_channel(args):
+    """Handle the channel subcommand."""
+    # Imported lazily to avoid a circular import at module load time.
+    from .channel import run_channel
+
+    run_channel(args)
+
+
 def add_summarise_args(parser):
     """Add common summarise arguments to a parser."""
     parser.add_argument("url", help="YouTube video URL to summarize")
@@ -326,6 +336,7 @@ Examples:
   {prog_name} "https://youtu.be/VIDEO_ID" --output summary.md
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --provider openai
   {prog_name} search "Python tutorial" --first
+  {prog_name} channel "@channelhandle" --last 5
         """,
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
@@ -383,6 +394,46 @@ Examples:
         help="Disable streaming output (wait for complete response before displaying)",
     )
     search_parser.set_defaults(func=cmd_search)
+
+    # Channel subcommand
+    channel_parser = subparsers.add_parser(
+        "channel", help="Summarize the latest videos of a whole YouTube channel"
+    )
+    channel_parser.add_argument(
+        "channel",
+        help="Channel URL or handle (e.g. https://www.youtube.com/@channel or @channel)",
+    )
+    channel_parser.add_argument(
+        "--last",
+        "-n",
+        type=int,
+        default=10,
+        help="Number of most recent videos to summarize (default: 10)",
+    )
+    channel_parser.add_argument(
+        "-o",
+        "--output-dir",
+        help="Output folder (default: YYYY-MM-DD__channel-name-slug/)",
+        default=None,
+    )
+    channel_parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Skip the cost/time confirmation prompt",
+    )
+    channel_parser.add_argument(
+        "--skip-channel-summary",
+        action="store_true",
+        help="Only write per-video summaries; skip the overall channel summary",
+    )
+    channel_parser.add_argument(
+        "--provider",
+        choices=["openai", "anthropic", "openrouter"],
+        help="LLM provider to use (overrides config)",
+        default=None,
+    )
+    channel_parser.set_defaults(func=cmd_channel)
 
     # Parse arguments
     args = parser.parse_args()

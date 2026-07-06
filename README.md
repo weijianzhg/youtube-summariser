@@ -112,6 +112,38 @@ youtube-summariser search "Python tutorial" --first
 youtube-summariser search "cooking recipes" --max-results 10
 ```
 
+### Summarize a Whole Channel
+
+Summarize the latest videos of a channel in one go — one summary file per video, plus an overall channel summary:
+
+```bash
+# Last 10 videos (default) of a channel, by handle or URL
+youtube-summariser channel "@mkbhd"
+
+# Only the last 5 videos
+youtube-summariser channel "https://www.youtube.com/@mkbhd" --last 5
+
+# Skip the confirmation prompt (e.g. for scripts)
+youtube-summariser channel "@mkbhd" --last 5 --yes
+
+# Per-video summaries only, no channel roll-up
+youtube-summariser channel "@mkbhd" --skip-channel-summary
+```
+
+Before starting, the command shows an estimate of tokens, cost, and time and asks for confirmation — summarizing a whole channel makes one LLM request per video and can take a while.
+
+Output is written to a folder (default `YYYY-MM-DD__channel-name-slug/`, override with `-o`):
+
+```
+2026-07-06__mkbhd/
+├── 00__channel-summary.md          # overall channel summary
+├── 2026-07-06__video-one__abc123.md
+├── 2026-07-06__video-two__def456.md
+└── ...
+```
+
+Runs are **resumable**: videos that fail (e.g. no transcript) are skipped, interrupting with Ctrl-C keeps completed summaries, and re-running the same command only processes videos that don't have a summary file yet.
+
 ### Commands
 
 
@@ -120,6 +152,7 @@ youtube-summariser search "cooking recipes" --max-results 10
 | `init`      | Interactive setup for API keys and preferences          |
 | `summarise` | Summarize a YouTube video (also aliased as `summarize`) |
 | `search`    | Search YouTube by title and summarize                   |
+| `channel`   | Summarize the latest videos of a whole channel          |
 
 
 You can also pass a URL directly without the `summarise` subcommand for convenience.
@@ -135,6 +168,10 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 | `--no-stream`   | Disable streaming output                                               |
 | `--first, -1`   | Auto-select first search result (search command only)                  |
 | `--max-results` | Number of search results to display (default: 5)                       |
+| `--last, -n`    | Number of most recent videos to summarize (channel command, default: 10) |
+| `--output-dir, -o` | Output folder for channel summaries (channel command)               |
+| `--yes, -y`     | Skip the cost/time confirmation prompt (channel command only)          |
+| `--skip-channel-summary` | Skip the overall channel summary (channel command only)       |
 | `-v, --version` | Show version number                                                    |
 | `-h, --help`    | Show help message                                                      |
 

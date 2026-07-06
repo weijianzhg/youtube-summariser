@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-06
+
+### Added
+- **Channel summarization**: New `channel` subcommand to summarize the latest videos of a whole YouTube channel
+  - `youtube-summariser channel "@handle" --last N` (default: 10 videos)
+  - Shows an estimate of tokens, cost, and time with a confirmation prompt before starting (`--yes` to skip)
+  - Writes one summary file per video into a folder (default `YYYY-MM-DD__channel-name-slug/`, override with `-o`)
+  - Generates an overall channel summary (`00__channel-summary.md`) from the per-video summaries (`--skip-channel-summary` to disable)
+  - Resumable: videos without transcripts are skipped, Ctrl-C keeps completed summaries, and re-running only processes videos not yet summarized
+- `YouTubeHelper.get_channel_videos()` helper for listing a channel's latest videos via pytubefix
+
 ## [0.6.3] - 2026-04-13
 
 ### Added
