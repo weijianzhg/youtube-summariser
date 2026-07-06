@@ -268,7 +268,6 @@ def run_channel(args) -> None:
     print(f"Channel: {channel_name} — found {len(videos)} video(s) (latest first)")
 
     output_dir = args.output_dir or default_output_dir(channel_name, slugify_filename_component)
-    os.makedirs(output_dir, exist_ok=True)
 
     done: List[Tuple[Dict, str]] = []  # (video, summary) reused from previous runs
     todo: List[Dict] = []
@@ -286,6 +285,8 @@ def run_channel(args) -> None:
         estimate = estimate_run(todo, llm.get_model())
         if not confirm_run(todo, len(done), estimate, llm.get_model(), args.yes):
             sys.exit(0)
+
+    os.makedirs(output_dir, exist_ok=True)
 
     summaries: List[Tuple[Dict, str]] = list(done)
     failed: List[Dict] = []
