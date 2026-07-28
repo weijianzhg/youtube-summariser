@@ -112,6 +112,27 @@ youtube-summariser search "Python tutorial" --first
 youtube-summariser search "cooking recipes" --max-results 10
 ```
 
+### Summarize a Channel
+
+Summarize every video published on a channel:
+
+```bash
+youtube-summariser channel "https://www.youtube.com/@CHANNEL"
+```
+
+For large channels, limit the run to the most recent videos:
+
+```bash
+youtube-summariser channel "https://www.youtube.com/@CHANNEL" --max-videos 10
+```
+
+Each video goes through the same transcript and LLM summarization pipeline as the
+single-video command. Summaries are saved individually under `channel-summaries/` by
+default. Use `--output-dir` to choose another directory.
+
+> **Note:** Without `--max-videos`, the command processes every video on the channel.
+> This can take a long time and make many LLM API calls on a large channel.
+
 ### Commands
 
 
@@ -120,6 +141,7 @@ youtube-summariser search "cooking recipes" --max-results 10
 | `init`      | Interactive setup for API keys and preferences          |
 | `summarise` | Summarize a YouTube video (also aliased as `summarize`) |
 | `search`    | Search YouTube by title and summarize                   |
+| `channel`   | Summarize all or the most recent videos from a channel  |
 
 
 You can also pass a URL directly without the `summarise` subcommand for convenience.
@@ -135,6 +157,8 @@ You can also pass a URL directly without the `summarise` subcommand for convenie
 | `--no-stream`   | Disable streaming output                                               |
 | `--first, -1`   | Auto-select first search result (search command only)                  |
 | `--max-results` | Number of search results to display (default: 5)                       |
+| `--max-videos`  | Maximum recent channel videos to summarize (default: all)              |
+| `--output-dir`  | Directory for channel summary files (default: `channel-summaries`)     |
 | `-v, --version` | Show version number                                                    |
 | `-h, --help`    | Show help message                                                      |
 

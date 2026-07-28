@@ -208,3 +208,64 @@ class TestYouTubeHelperVideoTitle:
                 YouTubeHelper.get_video_title("abc123")
 
         assert "Failed to get video title" in str(exc_info.value)
+
+
+class TestYouTubeHelperChannelVideos:
+    """Test fetching videos from a channel."""
+
+    def test_get_channel_videos_returns_recent_videos_up_to_limit(self):
+        """Channel videos should retain provider order and respect the upper limit."""
+        mock_channel = MagicMock()
+        mock_channel.video_urls = [
+            "https://www.youtube.com/watch?v=recent1",
+            "https://www.youtube.com/watch?v=recent2",
+            "https://www.youtube.com/watch?v=older3",
+        ]
+
+        with patch("pytubefix.Channel", return_value=mock_channel):
+            videos = YouTubeHelper.get_channel_videos(
+                "https://www.youtube.com/@example", max_videos=2
+            )
+
+        assert videos == [
+            {
+                "video_id": "recent1",
+                "url": "https://www.youtube.com/watch?v=recent1",
+            },
+            {
+                "video_id": "recent2",
+                "url": "https://www.youtube.com/watch?v=recent2",
+            },
+        ]
+
+    def test_get_channel_videos_without_limit_returns_all(self):
+        """An omitted limit should return every video exposed by the channel."""
+        mock_channel = MagicMock()
+        mock_channel.video_urls = [
+            "https://www.youtube.com/watch?v=one",
+            "https://www.youtube.com/watch?v=two",
+        ]
+
+        with patch("pytubefix.Channel", return_value=mock_channel):
+            videos = YouTubeHelper.get_channel_videos("https://youtube.com/channel/UC123")
+
+        assert [video["video_id"] for video in videos] == ["one", "two"]
+
+    @pytest.mark.parametrize("max_videos", [0, -1])
+    def test_get_channel_videos_rejects_invalid_limit(self, max_videos):
+        """The upper limit must be a positive integer."""
+        with pytest.raises(ValueError, match="at least 1"):
+            YouTubeHelper.get_channel_videos(
+                "https://www.youtube.com/@example", max_videos=max_videos
+            )
+
+    def test_get_channel_videos_rejects_non_youtube_url(self):
+        """Only YouTube channel URLs should be accepted."""
+        with pytest.raises(ValueError, match="Invalid YouTube channel URL"):
+            YouTubeHelper.get_channel_videos("https://example.com/channel")
+
+    def test_get_channel_videos_wraps_provider_errors(self):
+        """Channel lookup errors should include user-facing context."""
+        with patch("pytubefix.Channel", side_effect=RuntimeError("network")):
+            with pytest.raises(Exception, match="Failed to get channel videos"):
+                YouTubeHelper.get_channel_videos("https://youtube.com/@example")
