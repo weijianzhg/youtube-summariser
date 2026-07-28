@@ -55,10 +55,11 @@ class TestTitlePlumbing:
 
         captured = {}
 
-        def fake_process_video(video_id, video_url, video_title, args, llm):
+        def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
             captured["video_id"] = video_id
             captured["video_url"] = video_url
             captured["video_title"] = video_title
+            captured["channel"] = channel
             captured["args"] = args
             captured["llm"] = llm
 
@@ -78,6 +79,7 @@ class TestTitlePlumbing:
 
         assert captured["video_id"] == "abc123"
         assert captured["video_title"] == "Readable Video Title"
+        assert captured["channel"] == "Example Channel"
         assert captured["args"] is args
         assert isinstance(captured["llm"], FakeLLMClient)
 
@@ -88,16 +90,17 @@ class TestTitlePlumbing:
         monkeypatch.setattr(cli.YouTubeHelper, "extract_video_id", lambda url: "abc123")
         monkeypatch.setattr(
             cli.YouTubeHelper,
-            "get_video_title",
-            lambda video_id: "Title from Metadata",
+            "get_video_metadata",
+            lambda video_id: {"title": "Title from Metadata", "channel": "Example Channel"},
         )
 
         captured = {}
 
-        def fake_process_video(video_id, video_url, video_title, args, llm):
+        def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
             captured["video_id"] = video_id
             captured["video_url"] = video_url
             captured["video_title"] = video_title
+            captured["channel"] = channel
             captured["args"] = args
             captured["llm"] = llm
 
@@ -116,6 +119,7 @@ class TestTitlePlumbing:
         assert captured["video_id"] == "abc123"
         assert captured["video_url"] == args.url
         assert captured["video_title"] == "Title from Metadata"
+        assert captured["channel"] == "Example Channel"
         assert captured["args"] is args
         assert isinstance(captured["llm"], FakeLLMClient)
 
@@ -128,12 +132,13 @@ class TestTitlePlumbing:
         def raise_lookup_error(video_id):
             raise Exception("lookup failed")
 
-        monkeypatch.setattr(cli.YouTubeHelper, "get_video_title", raise_lookup_error)
+        monkeypatch.setattr(cli.YouTubeHelper, "get_video_metadata", raise_lookup_error)
 
         captured = {}
 
-        def fake_process_video(video_id, video_url, video_title, args, llm):
+        def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
             captured["video_title"] = video_title
+            captured["channel"] = channel
 
         monkeypatch.setattr(cli, "process_video", fake_process_video)
 
@@ -148,3 +153,56 @@ class TestTitlePlumbing:
         cli.cmd_summarise(args)
 
         assert captured["video_title"] is None
+        assert captured["channel"] is None
+
+
+class TestObsidianSummaryFormat:
+    """Test Obsidian-oriented summary document formatting."""
+
+    def test_format_summary_document_includes_frontmatter_and_title_heading(self):
+        """Saved notes should use YAML frontmatter and the video title as H1."""
+        llm = FakeLLMClient()
+        created = __import__("datetime").datetime(2026, 7, 28, 15, 30, 0)
+
+        document = cli.format_summary_document(
+            summary="### TL;DR\nA crisp summary.\n\n#youtube #ai",
+            video_id="abc123",
+            video_url="https://www.youtube.com/watch?v=abc123",
+            video_title='How to "ship" notes',
+            llm=llm,
+            channel="Example Channel",
+            created_at=created,
+        )
+
+        assert document.startswith("---\n")
+        assert 'title: "How to \\"ship\\" notes"' in document
+        assert 'url: "https://www.youtube.com/watch?v=abc123"' in document
+        assert "video_id: abc123" in document
+        assert 'channel: "Example Channel"' in document
+        assert "created: 2026-07-28" in document
+        assert "tags:\n  - youtube\n  - summary" in document
+        assert 'model: "anthropic/test-model"' in document
+        assert '# How to "ship" notes\n' in document
+        assert "### TL;DR\nA crisp summary." in document
+
+    def test_format_summary_document_falls_back_without_title(self):
+        """Missing titles should still produce a usable note heading."""
+        document = cli.format_summary_document(
+            summary="Body",
+            video_id="abc123",
+            video_url="https://www.youtube.com/watch?v=abc123",
+            video_title=None,
+            llm=FakeLLMClient(),
+        )
+
+        assert 'title: "YouTube Video abc123"' in document
+        assert "# YouTube Video abc123\n" in document
+        assert "channel:" not in document
+
+    def test_build_system_prompt_includes_deep_link_template(self):
+        """The prompt should ask for clickable YouTube timestamp links."""
+        prompt = cli.build_system_prompt("abc123")
+        assert "https://www.youtube.com/watch?v=abc123&t=SECONDS" in prompt
+        assert "Do not invent [[wikilinks]]" in prompt
+        assert "#youtube" in prompt
+        assert "Do not include an H1 title" in prompt

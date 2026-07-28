@@ -51,11 +51,15 @@ def test_cmd_channel_reuses_one_llm_and_processes_each_video(monkeypatch):
         return videos
 
     monkeypatch.setattr(cli.YouTubeHelper, "get_channel_videos", fake_get_channel_videos)
-    monkeypatch.setattr(cli.YouTubeHelper, "get_video_title", lambda video_id: f"Title {video_id}")
+    monkeypatch.setattr(
+        cli.YouTubeHelper,
+        "get_video_metadata",
+        lambda video_id: {"title": f"Title {video_id}", "channel": "Example Channel"},
+    )
 
     processed = []
 
-    def fake_process_video(video_id, video_url, video_title, args, llm):
+    def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
         processed.append((video_id, video_url, video_title, args, llm))
         return True
 
@@ -84,11 +88,15 @@ def test_cmd_channel_continues_after_individual_failure(monkeypatch):
             {"video_id": "works", "url": "https://www.youtube.com/watch?v=works"},
         ],
     )
-    monkeypatch.setattr(cli.YouTubeHelper, "get_video_title", lambda video_id: video_id)
+    monkeypatch.setattr(
+        cli.YouTubeHelper,
+        "get_video_metadata",
+        lambda video_id: {"title": video_id, "channel": ""},
+    )
 
     processed = []
 
-    def fake_process_video(video_id, video_url, video_title, args, llm):
+    def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
         processed.append(video_id)
         return video_id == "works"
 
@@ -119,7 +127,7 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
     monkeypatch.setattr(
         cli,
         "summarize_transcript",
-        lambda transcript, llm, stream=True: "### TL;DR\nA summary.",
+        lambda transcript, llm, stream=True, video_id=None: "### TL;DR\nA summary.",
     )
     args = channel_args(output_dir=tmp_path)
     llm = FakeLLMClient()
@@ -130,11 +138,16 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
         "Example Video",
         args,
         llm,
+        channel="Example Channel",
     )
 
     assert succeeded is True
     output_files = list(tmp_path.glob("*__example-video__abc123.md"))
     assert len(output_files) == 1
     content = output_files[0].read_text(encoding="utf-8")
+    assert content.startswith("---\n")
+    assert 'title: "Example Video"' in content
+    assert 'channel: "Example Channel"' in content
+    assert "# Example Video\n" in content
     assert "### TL;DR\nA summary." in content
     assert "https://www.youtube.com/watch?v=abc123" in content

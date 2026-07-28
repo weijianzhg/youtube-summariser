@@ -24,6 +24,9 @@ class YouTubeHelper:
     @staticmethod
     def extract_video_id(url: str) -> Optional[str]:
         """Extract YouTube video ID from various URL formats."""
+        if not isinstance(url, str) or not url.strip():
+            return None
+
         try:
             parsed_url = urlparse(url)
 
@@ -218,11 +221,31 @@ class YouTubeHelper:
             if max_videos is not None:
                 video_urls = islice(video_urls, max_videos)
 
+            raw_channel_name = getattr(channel, "channel_name", None)
+            channel_name = (
+                raw_channel_name.strip() if isinstance(raw_channel_name, str) else None
+            ) or None
             videos = []
-            for video_url in video_urls:
-                video_id = YouTubeHelper.extract_video_id(video_url)
-                if video_id:
-                    videos.append({"video_id": video_id, "url": video_url})
+            for item in video_urls:
+                video_id = None
+                video_url = None
+
+                if isinstance(item, str):
+                    video_url = item
+                    video_id = YouTubeHelper.extract_video_id(item)
+                else:
+                    # Older pytubefix versions yielded YouTube objects from video_urls
+                    video_id = getattr(item, "video_id", None)
+                    video_url = getattr(item, "watch_url", None)
+                    if video_id and not video_url:
+                        video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+                if video_id and video_url:
+                    entry = {"video_id": video_id, "url": video_url}
+                    if channel_name:
+                        entry["channel"] = channel_name
+                    videos.append(entry)
+
             return videos
 
         except ValueError:
@@ -245,6 +268,22 @@ class YouTubeHelper:
         Raises:
             Exception: If title lookup fails
         """
+        return YouTubeHelper.get_video_metadata(video_id)["title"]
+
+    @staticmethod
+    def get_video_metadata(video_id: str) -> Dict[str, str]:
+        """
+        Get basic video metadata from YouTube.
+
+        Args:
+            video_id: YouTube video ID
+
+        Returns:
+            Dictionary with title and channel keys
+
+        Raises:
+            Exception: If metadata lookup fails
+        """
         from pytubefix import YouTube
 
         try:
@@ -256,10 +295,14 @@ class YouTubeHelper:
             title = (video.title or "").strip()
             if not title:
                 raise Exception("Empty title returned")
-            return title
+            author = video.author if isinstance(video.author, str) else ""
+            return {
+                "title": title,
+                "channel": author.strip(),
+            }
 
         except ValueError:
             raise
         except Exception as e:
-            logger.error(f"Error getting title for video {video_id}: {str(e)}")
+            logger.error(f"Error getting metadata for video {video_id}: {str(e)}")
             raise Exception(f"Failed to get video title: {str(e)}")

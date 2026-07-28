@@ -1,29 +1,29 @@
-## Channel-wide YouTube summarization
+## Channel discovery fix and Obsidian-ready notes
 
-Version 0.7.0 adds a channel workflow that runs the existing transcript and AI
-summarization pipeline across multiple videos.
+Version 0.7.1 fixes channel video discovery on current YouTube/pytubefix builds and
+makes summary markdown ready to drop into an Obsidian vault.
 
-### What's new
+### What's fixed
 
-- Summarize every video published on a channel:
+- `ys channel` no longer fails with `a bytes-like object is required, not 'str'`
+  when older `pytubefix` builds return non-string channel entries
+- Minimum `pytubefix` raised to `>=10.10.0` for working channel URL extraction
 
-  ```bash
-  youtube-summariser channel "https://www.youtube.com/@CHANNEL"
-  ```
+### What's improved
 
-- Limit large or expensive runs to the most recent videos:
+- Summary notes now include YAML frontmatter (`title`, `url`, `video_id`, `channel`,
+  `created`, `tags`, `model`)
+- Video title is used as the note H1
+- The summarization prompt asks for clickable YouTube timestamp deep links,
+  topical tags (including `#youtube`), and optional Obsidian callouts
+- Invented `[[wikilinks]]` are discouraged so notes stay vault-friendly
 
-  ```bash
-  youtube-summariser channel "https://www.youtube.com/@CHANNEL" --max-videos 10
-  ```
+Example channel usage:
 
-- Store each video's Markdown summary under `channel-summaries/`, or select another
-  directory with `--output-dir`.
-- Continue past videos with unavailable transcripts or failed summaries, then report
-  incomplete video IDs at the end.
+```bash
+youtube-summariser channel "https://www.youtube.com/@CHANNEL" --max-videos 10
+```
 
-The channel command supports the same provider and streaming options as single-video
-summarization. Omitting `--max-videos` processes the full channel and may result in a
-long-running job with many LLM API calls.
+Point `--output-dir` at an Obsidian vault folder to save notes in place.
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete change list.
