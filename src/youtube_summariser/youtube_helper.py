@@ -2,6 +2,7 @@
 
 import logging
 import re
+from itertools import islice
 from typing import Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
@@ -182,6 +183,53 @@ class YouTubeHelper:
         except Exception as e:
             logger.error(f"Error searching YouTube for '{query}': {str(e)}")
             raise Exception(f"Failed to search YouTube: {str(e)}")
+
+    @staticmethod
+    def get_channel_videos(
+        channel_url: str, max_videos: Optional[int] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Get videos from a YouTube channel, newest first.
+
+        Args:
+            channel_url: Full YouTube channel URL
+            max_videos: Optional upper limit on the number of recent videos
+
+        Returns:
+            List of dictionaries containing video_id and url
+
+        Raises:
+            ValueError: If the URL or limit is invalid
+            Exception: If channel videos cannot be retrieved
+        """
+        from pytubefix import Channel
+
+        if max_videos is not None and max_videos < 1:
+            raise ValueError("Maximum videos must be at least 1")
+
+        parsed_url = urlparse(channel_url)
+        hostname = (parsed_url.hostname or "").lower()
+        if hostname != "youtube.com" and not hostname.endswith(".youtube.com"):
+            raise ValueError("Invalid YouTube channel URL")
+
+        try:
+            channel = Channel(channel_url)
+            video_urls = channel.video_urls
+            if max_videos is not None:
+                video_urls = islice(video_urls, max_videos)
+
+            videos = []
+            for video_url in video_urls:
+                video_id = YouTubeHelper.extract_video_id(video_url)
+                if video_id:
+                    videos.append({"video_id": video_id, "url": video_url})
+            return videos
+
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting videos for channel '{channel_url}': {str(e)}")
+            raise Exception(f"Failed to get channel videos: {str(e)}")
 
     @staticmethod
     def get_video_title(video_id: str) -> str:

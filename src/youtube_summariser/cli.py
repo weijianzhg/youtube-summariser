@@ -21,6 +21,7 @@ import os
 import re
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -175,7 +176,11 @@ def cmd_search(args):
     print(f"URL: {selected['url']}\n")
 
     # Process the selected video
-    process_video(selected["video_id"], selected["url"], selected.get("title"), args, llm)
+    if (
+        process_video(selected["video_id"], selected["url"], selected.get("title"), args, llm)
+        is False
+    ):
+        sys.exit(1)
 
 
 def process_video(
@@ -184,7 +189,7 @@ def process_video(
     video_title: Optional[str],
     args,
     llm: LLMClient,
-) -> None:
+) -> bool:
     """
     Shared logic for processing a video: fetch transcript, summarize, and save.
 
@@ -192,15 +197,18 @@ def process_video(
         video_id: YouTube video ID
         video_url: Full YouTube URL
         video_title: Optional video title for filename generation
-        args: Parsed CLI arguments (must have output, no_save, no_stream attributes)
+        args: Parsed CLI arguments (must have no_save and no_stream attributes)
         llm: Initialized LLM client
+
+    Returns:
+        True when the video was processed successfully, otherwise False
     """
     print(f"Fetching transcript for {video_id}...")
     try:
         transcript = YouTubeHelper.get_transcript(video_id)
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
-        sys.exit(1)
+        return False
 
     print(f"Transcript: {len(transcript)} characters")
     print("Generating summary...")
@@ -208,7 +216,7 @@ def process_video(
         summary = summarize_transcript(transcript, llm, stream=not args.no_stream)
     except Exception as e:
         print(f"\nError generating summary: {str(e)}", file=sys.stderr)
-        sys.exit(1)
+        return False
 
     if args.no_stream:
         print("Done.")
@@ -235,16 +243,27 @@ def process_video(
             print("\n" + "-" * 50)
             print(output_content)
     else:
-        output_file = args.output or generate_output_filename(video_id, video_title)
+        output_file = Path(
+            getattr(args, "output", None) or generate_output_filename(video_id, video_title)
+        )
+        output_dir = getattr(args, "output_dir", None)
+        if output_dir:
+            output_file = Path(output_dir) / output_file
 
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(output_content)
+        try:
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            output_file.write_text(output_content, encoding="utf-8")
+        except OSError as e:
+            print(f"Error saving summary: {str(e)}", file=sys.stderr)
+            return False
 
         print(f"Saved to {output_file}")
         if args.no_stream:
             # Only print full formatted output if we haven't already streamed it
             print("\n" + "-" * 50)
             print(output_content)
+
+    return True
 
 
 def cmd_summarise(args):
@@ -275,7 +294,61 @@ def cmd_summarise(args):
         # Title lookup is non-critical; filename fallback still includes video ID.
         video_title = None
 
-    process_video(video_id, args.url, video_title, args, llm)
+    if process_video(video_id, args.url, video_title, args, llm) is False:
+        sys.exit(1)
+
+
+def cmd_channel(args):
+    """Summarize videos from a YouTube channel."""
+    if args.max_videos is not None and args.max_videos < 1:
+        print("Error: --max-videos must be at least 1", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        llm = LLMClient(provider=args.provider)
+        print(f"Using {llm.provider}/{llm.get_model()}")
+    except ValueError as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.max_videos is None:
+        print("Finding all videos in the channel...")
+    else:
+        print(f"Finding the {args.max_videos} most recent channel video(s)...")
+
+    try:
+        videos = YouTubeHelper.get_channel_videos(args.url, max_videos=args.max_videos)
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+    if not videos:
+        print("No videos found in the channel.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Found {len(videos)} video(s).")
+    succeeded = 0
+    failed = []
+
+    for index, video in enumerate(videos, 1):
+        video_id = video["video_id"]
+        print(f"\n[{index}/{len(videos)}] Processing {video_id}")
+
+        try:
+            video_title = YouTubeHelper.get_video_title(video_id)
+            print(f"Title: {video_title}")
+        except Exception:
+            video_title = None
+
+        if process_video(video_id, video["url"], video_title, args, llm):
+            succeeded += 1
+        else:
+            failed.append(video_id)
+
+    print(f"\nChannel complete: {succeeded} succeeded, {len(failed)} failed.")
+    if failed:
+        print(f"Failed video IDs: {', '.join(failed)}", file=sys.stderr)
+        sys.exit(1)
 
 
 def add_summarise_args(parser):
@@ -326,6 +399,7 @@ Examples:
   {prog_name} "https://youtu.be/VIDEO_ID" --output summary.md
   {prog_name} "https://youtube.com/watch?v=VIDEO_ID" --provider openai
   {prog_name} search "Python tutorial" --first
+  {prog_name} channel "https://youtube.com/@CHANNEL" --max-videos 10
         """,
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
@@ -383,6 +457,38 @@ Examples:
         help="Disable streaming output (wait for complete response before displaying)",
     )
     search_parser.set_defaults(func=cmd_search)
+
+    # Channel subcommand
+    channel_parser = subparsers.add_parser(
+        "channel", help="Summarize videos from a YouTube channel"
+    )
+    channel_parser.add_argument("url", help="YouTube channel URL")
+    channel_parser.add_argument(
+        "--max-videos",
+        type=int,
+        default=None,
+        help="Maximum number of recent videos to summarize (default: all)",
+    )
+    channel_parser.add_argument(
+        "--output-dir",
+        default="channel-summaries",
+        help="Directory for summary files (default: channel-summaries)",
+    )
+    channel_parser.add_argument(
+        "--no-save", action="store_true", help="Print summaries to stdout without saving files"
+    )
+    channel_parser.add_argument(
+        "--provider",
+        choices=["openai", "anthropic", "openrouter"],
+        help="LLM provider to use (overrides config)",
+        default=None,
+    )
+    channel_parser.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming output (wait for each complete response before displaying)",
+    )
+    channel_parser.set_defaults(func=cmd_channel)
 
     # Parse arguments
     args = parser.parse_args()

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-28
+
+### Added
+- `channel` command for summarizing every video from a YouTube channel
+- `--max-videos` option for limiting channel runs to the most recent videos
+- `--output-dir` option for organizing per-video channel summaries
+
+### Changed
+- Batch channel runs continue after individual transcript or summary failures and report them at the end
+
 ## [0.6.3] - 2026-04-13
 
 ### Added
@@ -146,4 +156,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command-line interface with multiple output options
 - Configuration via YAML file
 - Support for both OpenAI and Anthropic API providers
-
