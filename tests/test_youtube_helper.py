@@ -283,9 +283,7 @@ class TestYouTubeHelperChannelVideos:
         with patch("pytubefix.Channel", return_value=mock_channel):
             videos = YouTubeHelper.get_channel_videos("https://www.youtube.com/@example")
 
-        assert videos == [
-            {"video_id": "obj123", "url": "https://www.youtube.com/watch?v=obj123"}
-        ]
+        assert videos == [{"video_id": "obj123", "url": "https://www.youtube.com/watch?v=obj123"}]
 
     def test_get_channel_videos_skips_non_video_entries(self):
         """Junk entries from broken providers should be ignored."""
@@ -295,9 +293,7 @@ class TestYouTubeHelperChannelVideos:
         with patch("pytubefix.Channel", return_value=mock_channel):
             videos = YouTubeHelper.get_channel_videos("https://www.youtube.com/@example")
 
-        assert videos == [
-            {"video_id": "keep", "url": "https://www.youtube.com/watch?v=keep"}
-        ]
+        assert videos == [{"video_id": "keep", "url": "https://www.youtube.com/watch?v=keep"}]
 
     @pytest.mark.parametrize("max_videos", [0, -1])
     def test_get_channel_videos_rejects_invalid_limit(self, max_videos):

@@ -182,7 +182,7 @@ class TestObsidianSummaryFormat:
         assert "created: 2026-07-28" in document
         assert "tags:\n  - youtube\n  - summary" in document
         assert 'model: "anthropic/test-model"' in document
-        assert "# How to \"ship\" notes\n" in document
+        assert '# How to "ship" notes\n' in document
         assert "### TL;DR\nA crisp summary." in document
 
     def test_format_summary_document_falls_back_without_title(self):
