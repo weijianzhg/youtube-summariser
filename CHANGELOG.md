@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-28
+
+### Fixed
+- Channel video discovery failing with `a bytes-like object is required, not 'str'` on older `pytubefix` builds
+- `extract_video_id` now rejects non-string inputs instead of logging a cryptic parse error
+
+### Changed
+- Raised minimum `pytubefix` requirement to `>=10.10.0` for working channel URL extraction
+- Channel listing now accepts both URL strings and YouTube objects from `video_urls`, and skips junk entries
+
 ## [0.7.0] - 2026-07-28
 
 ### Added

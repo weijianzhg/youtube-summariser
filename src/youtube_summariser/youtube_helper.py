@@ -24,6 +24,9 @@ class YouTubeHelper:
     @staticmethod
     def extract_video_id(url: str) -> Optional[str]:
         """Extract YouTube video ID from various URL formats."""
+        if not isinstance(url, str) or not url.strip():
+            return None
+
         try:
             parsed_url = urlparse(url)
 
@@ -219,10 +222,23 @@ class YouTubeHelper:
                 video_urls = islice(video_urls, max_videos)
 
             videos = []
-            for video_url in video_urls:
-                video_id = YouTubeHelper.extract_video_id(video_url)
-                if video_id:
+            for item in video_urls:
+                video_id = None
+                video_url = None
+
+                if isinstance(item, str):
+                    video_url = item
+                    video_id = YouTubeHelper.extract_video_id(item)
+                else:
+                    # Older pytubefix versions yielded YouTube objects from video_urls
+                    video_id = getattr(item, "video_id", None)
+                    video_url = getattr(item, "watch_url", None)
+                    if video_id and not video_url:
+                        video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+                if video_id and video_url:
                     videos.append({"video_id": video_id, "url": video_url})
+
             return videos
 
         except ValueError:

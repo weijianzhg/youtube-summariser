@@ -162,6 +162,9 @@ class TestYouTubeHelperExtractVideoId:
         """Should return None for invalid URLs."""
         assert YouTubeHelper.extract_video_id("not-a-url") is None
         assert YouTubeHelper.extract_video_id("https://google.com") is None
+        assert YouTubeHelper.extract_video_id("") is None
+        assert YouTubeHelper.extract_video_id([]) is None
+        assert YouTubeHelper.extract_video_id(None) is None
 
 
 class TestYouTubeHelperValidateUrl:
@@ -250,6 +253,34 @@ class TestYouTubeHelperChannelVideos:
             videos = YouTubeHelper.get_channel_videos("https://youtube.com/channel/UC123")
 
         assert [video["video_id"] for video in videos] == ["one", "two"]
+
+    def test_get_channel_videos_accepts_youtube_objects(self):
+        """Older pytubefix builds yielded YouTube objects from video_urls."""
+        mock_video = MagicMock()
+        mock_video.video_id = "obj123"
+        mock_video.watch_url = "https://www.youtube.com/watch?v=obj123"
+
+        mock_channel = MagicMock()
+        mock_channel.video_urls = [mock_video]
+
+        with patch("pytubefix.Channel", return_value=mock_channel):
+            videos = YouTubeHelper.get_channel_videos("https://www.youtube.com/@example")
+
+        assert videos == [
+            {"video_id": "obj123", "url": "https://www.youtube.com/watch?v=obj123"}
+        ]
+
+    def test_get_channel_videos_skips_non_video_entries(self):
+        """Junk entries from broken providers should be ignored."""
+        mock_channel = MagicMock()
+        mock_channel.video_urls = [[], None, "https://www.youtube.com/watch?v=keep"]
+
+        with patch("pytubefix.Channel", return_value=mock_channel):
+            videos = YouTubeHelper.get_channel_videos("https://www.youtube.com/@example")
+
+        assert videos == [
+            {"video_id": "keep", "url": "https://www.youtube.com/watch?v=keep"}
+        ]
 
     @pytest.mark.parametrize("max_videos", [0, -1])
     def test_get_channel_videos_rejects_invalid_limit(self, max_videos):
