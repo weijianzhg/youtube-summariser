@@ -55,7 +55,6 @@ CONTENT_TYPES = {
     "visual",
     "other",
 }
-QUALITY_LEVELS = {"high", "medium", "low"}
 
 
 def build_system_prompt(
@@ -109,8 +108,6 @@ End with exactly one HTML comment containing valid JSON in this shape:
 <!-- knowledge-graph
 {{
   "content_type": "tutorial",
-  "summary_quality": "high",
-  "transcript_quality": "high",
   "topics": ["machine-learning", "neural-networks"],
   "concepts": ["gradient descent", "backpropagation"],
   "prerequisites": ["basic calculus"],
@@ -122,14 +119,12 @@ End with exactly one HTML comment containing valid JSON in this shape:
 Metadata rules:
 - content_type: one of tutorial, lecture, talk, interview, podcast, demonstration,
   documentary, news, entertainment, music, visual, other
-- summary_quality and transcript_quality: one of high, medium, low
 - topics: 3-8 reusable lowercase kebab-case topics; prefer common names over novel synonyms
 - concepts: 3-8 concise noun phrases naming ideas actually explained
 - prerequisites: 0-5 concepts a viewer should know first; use [] when none are evident
 - series: an explicit series or playlist name, otherwise null
 - series_index: a positive integer only when the video's position is explicit, otherwise null
-- If the transcript is sparse, broken, or mostly music cues, mark transcript_quality low and
-  summary_quality low. Do not infer visual content that is absent from the transcript.
+- Do not infer visual content that is absent from the transcript.
 - Do not wrap the JSON in a Markdown code fence or add text after the comment.
 
 Preserve meaningful timestamps from the transcript as clickable deep links.
@@ -190,11 +185,6 @@ def extract_knowledge_graph_metadata(summary: str) -> tuple[str, dict[str, Any]]
     content_type = raw_metadata.get("content_type")
     if isinstance(content_type, str) and content_type in CONTENT_TYPES:
         metadata["content_type"] = content_type
-
-    for field in ("summary_quality", "transcript_quality"):
-        value = raw_metadata.get(field)
-        if isinstance(value, str) and value in QUALITY_LEVELS:
-            metadata[field] = value
 
     topics = []
     for topic in _normalize_text_list(raw_metadata.get("topics"), max_items=8):
@@ -264,9 +254,8 @@ def format_summary_document(
         ]
     )
 
-    for field in ("content_type", "summary_quality", "transcript_quality"):
-        if field in metadata:
-            lines.append(f"{field}: {metadata[field]}")
+    if "content_type" in metadata:
+        lines.append(f"content_type: {metadata['content_type']}")
     if "series" in metadata:
         lines.append(f'series: "{yaml_escape(metadata["series"])}"')
     if "series_index" in metadata:

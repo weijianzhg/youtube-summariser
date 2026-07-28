@@ -206,8 +206,6 @@ A crisp summary.
 <!-- knowledge-graph
 {
   "content_type": "tutorial",
-  "summary_quality": "high",
-  "transcript_quality": "high",
   "topics": ["AI", "Neural Networks", "ai"],
   "concepts": ["Backpropagation", "Gradient descent"],
   "prerequisites": [],
@@ -232,8 +230,6 @@ A crisp summary.
         assert "published_at: 2026-07-20" in document
         assert "created: 2026-07-28" in document
         assert "content_type: tutorial" in document
-        assert "summary_quality: high" in document
-        assert "transcript_quality: high" in document
         assert 'series: "Neural Networks: Zero to Hero"' in document
         assert "series_index: 2" in document
         assert 'concepts:\n  - "Backpropagation"\n  - "Gradient descent"' in document

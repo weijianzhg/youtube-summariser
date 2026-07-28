@@ -8,14 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Relationship-ready Obsidian properties for content type, summary and transcript quality,
-  concepts, prerequisites, and explicit series position
+- Relationship-ready Obsidian properties for content type, concepts, prerequisites,
+  and explicit series position
 - Original YouTube publication date in summary frontmatter when metadata is available
 
 ### Changed
 - Topical tags are normalized and rendered into frontmatter instead of appended as inline hashtags
 - Model-provided knowledge graph metadata is parsed from validated JSON and omitted from the note body
-- Sparse or broken transcripts are explicitly marked low quality instead of encouraging visual guesses
 
 ## [0.7.1] - 2026-07-28
 
