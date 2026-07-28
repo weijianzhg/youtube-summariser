@@ -59,8 +59,16 @@ def test_cmd_channel_reuses_one_llm_and_processes_each_video(monkeypatch):
 
     processed = []
 
-    def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
-        processed.append((video_id, video_url, video_title, args, llm))
+    def fake_process_video(
+        video_id,
+        video_url,
+        video_title,
+        args,
+        llm,
+        channel=None,
+        published_at=None,
+    ):
+        processed.append((video_id, video_url, video_title, args, llm, published_at))
         return True
 
     monkeypatch.setattr(cli, "process_video", fake_process_video)
@@ -96,7 +104,15 @@ def test_cmd_channel_continues_after_individual_failure(monkeypatch):
 
     processed = []
 
-    def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
+    def fake_process_video(
+        video_id,
+        video_url,
+        video_title,
+        args,
+        llm,
+        channel=None,
+        published_at=None,
+    ):
         processed.append(video_id)
         return video_id == "works"
 
@@ -127,7 +143,9 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
     monkeypatch.setattr(
         cli,
         "summarize_transcript",
-        lambda transcript, llm, stream=True, video_id=None: "### TL;DR\nA summary.",
+        lambda transcript, llm, stream=True, video_id=None, video_title=None, channel=None: (
+            "## TL;DR\nA summary."
+        ),
     )
     args = channel_args(output_dir=tmp_path)
     llm = FakeLLMClient()
@@ -149,5 +167,5 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
     assert 'title: "Example Video"' in content
     assert 'channel: "Example Channel"' in content
     assert "# Example Video\n" in content
-    assert "### TL;DR\nA summary." in content
+    assert "## TL;DR\nA summary." in content
     assert "https://www.youtube.com/watch?v=abc123" in content

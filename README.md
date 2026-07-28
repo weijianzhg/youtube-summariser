@@ -193,31 +193,49 @@ title: "Video Title"
 url: "https://www.youtube.com/watch?v=VIDEO_ID"
 video_id: VIDEO_ID
 channel: "Channel Name"
+published_at: 2026-07-20
 created: 2026-07-28
+content_type: tutorial
+summary_quality: high
+transcript_quality: high
+series: "Example Course"
+series_index: 2
+concepts:
+  - "gradient descent"
+  - "backpropagation"
+prerequisites:
+  - "basic calculus"
 tags:
   - youtube
   - summary
+  - machine-learning
+  - neural-networks
 model: "anthropic/claude-sonnet-4-5-20250929"
 ---
 
 # Video Title
 
-### TL;DR
+## TL;DR
 ...
 
-### Key Takeaways
+## Key Takeaways
 - Insight with a linked timestamp [12:34](https://www.youtube.com/watch?v=VIDEO_ID&t=754)
 
-### Detailed Summary
+## Detailed Summary
 ...
 
-### Notable Quotes
+## Notable Quotes
 ...
-
-#youtube #topic
 ```
 
-Notes are ready to drop into an Obsidian vault. Point `--output-dir` at a vault folder for channel runs.
+Topics are normalized into reusable Obsidian tags. Concepts, prerequisites, series
+position, source quality, and the original publication date are emitted as structured
+properties for filtering and relationship indexing. If the transcript is too sparse to
+support a reliable summary, `summary_quality` and `transcript_quality` are set to `low`
+instead of guessing from missing visual content.
+
+Notes are ready to drop into an Obsidian vault. Point `--output-dir` at a vault folder
+for channel runs.
 
 ## Requirements
 
