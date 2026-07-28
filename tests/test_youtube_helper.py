@@ -254,6 +254,23 @@ class TestYouTubeHelperChannelVideos:
 
         assert [video["video_id"] for video in videos] == ["one", "two"]
 
+    def test_get_channel_videos_includes_channel_name_when_available(self):
+        """Channel metadata should be attached when the provider exposes it."""
+        mock_channel = MagicMock()
+        mock_channel.channel_name = "Example Channel"
+        mock_channel.video_urls = ["https://www.youtube.com/watch?v=one"]
+
+        with patch("pytubefix.Channel", return_value=mock_channel):
+            videos = YouTubeHelper.get_channel_videos("https://www.youtube.com/@example")
+
+        assert videos == [
+            {
+                "video_id": "one",
+                "url": "https://www.youtube.com/watch?v=one",
+                "channel": "Example Channel",
+            }
+        ]
+
     def test_get_channel_videos_accepts_youtube_objects(self):
         """Older pytubefix builds yielded YouTube objects from video_urls."""
         mock_video = MagicMock()

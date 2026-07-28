@@ -33,27 +33,92 @@ from .youtube_helper import YouTubeHelper
 
 load_dotenv()
 
-SYSTEM_PROMPT = """Summarize this video transcript concisely.
 
-## Output Format (use markdown):
+def build_system_prompt(video_id: str) -> str:
+    """Build the summarization prompt for Obsidian-friendly markdown."""
+    return f"""Summarize this video transcript concisely for an Obsidian note.
+
+## Output Format (markdown):
+
+Do not include an H1 title — that is added separately.
 
 ### TL;DR
 One paragraph capturing the essence (2-3 sentences).
 
 ### Key Takeaways
 - Bullet points of the most important insights
-- Include timestamps like [MM:SS] where relevant
+- Where relevant, link timestamps as [MM:SS](https://www.youtube.com/watch?v={video_id}&t=SECONDS)
+  (SECONDS = total seconds from the start)
 
 ### Detailed Summary
 Comprehensive breakdown. Scale length to video complexity (~50 words per 5 minutes of content).
 
 ### Notable Quotes
-1-3 memorable quotes with timestamps, if any stand out.
+1-3 memorable quotes with linked timestamps, if any stand out.
 
-Preserve any timestamps from the transcript. Be concise—omit filler and tangents."""
+## Obsidian conventions
+- Prefer plain bullets over tables
+- You may use Obsidian callouts such as > [!summary] or > [!quote] sparingly
+- End with 3-8 topical tags on one line, like #ai #llm #education
+- Always include #youtube among the tags
+- Do not invent [[wikilinks]]
+
+Preserve meaningful timestamps from the transcript as clickable deep links.
+Be concise—omit filler and tangents."""
 
 
-def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -> str:
+def yaml_escape(value: str) -> str:
+    """Escape a string for inclusion in a double-quoted YAML value."""
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def format_summary_document(
+    *,
+    summary: str,
+    video_id: str,
+    video_url: str,
+    video_title: Optional[str],
+    llm: LLMClient,
+    channel: Optional[str] = None,
+    created_at: Optional[datetime] = None,
+) -> str:
+    """Format a summary as an Obsidian-friendly markdown note with YAML frontmatter."""
+    created = created_at or datetime.now()
+    title = (video_title or "").strip() or f"YouTube Video {video_id}"
+    model = f"{llm.provider}/{llm.get_model()}"
+
+    lines = [
+        "---",
+        f'title: "{yaml_escape(title)}"',
+        f'url: "{yaml_escape(video_url)}"',
+        f"video_id: {video_id}",
+    ]
+    if channel:
+        lines.append(f'channel: "{yaml_escape(channel)}"')
+    lines.extend(
+        [
+            f"created: {created.strftime('%Y-%m-%d')}",
+            "tags:",
+            "  - youtube",
+            "  - summary",
+            f'model: "{yaml_escape(model)}"',
+            "---",
+            "",
+            f"# {title}",
+            "",
+            summary.strip(),
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def summarize_transcript(
+    transcript: str,
+    llm: LLMClient,
+    stream: bool = True,
+    video_id: Optional[str] = None,
+) -> str:
     """
     Summarize transcript using the configured LLM.
 
@@ -61,16 +126,18 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
         transcript: The video transcript to summarize
         llm: The LLM client instance
         stream: If True, use streaming and print output incrementally
+        video_id: Optional YouTube video ID for timestamp deep links
 
     Returns:
         The complete summary text
     """
+    system_prompt = build_system_prompt(video_id or "VIDEO_ID")
     if stream:
         # Use streaming and collect the full response
         summary_parts = []
         print("\n--- Summary ---\n")
         try:
-            for chunk in llm.stream_chat(SYSTEM_PROMPT, transcript):
+            for chunk in llm.stream_chat(system_prompt, transcript):
                 print(chunk, end="", flush=True)
                 summary_parts.append(chunk)
             print("\n")
@@ -80,7 +147,7 @@ def summarize_transcript(transcript: str, llm: LLMClient, stream: bool = True) -
             return "".join(summary_parts)
     else:
         # Non-streaming fallback
-        return llm.chat(SYSTEM_PROMPT, transcript)
+        return llm.chat(system_prompt, transcript)
 
 
 def slugify_filename_component(value: str, max_length: int = 80) -> str:
@@ -177,7 +244,14 @@ def cmd_search(args):
 
     # Process the selected video
     if (
-        process_video(selected["video_id"], selected["url"], selected.get("title"), args, llm)
+        process_video(
+            selected["video_id"],
+            selected["url"],
+            selected.get("title"),
+            args,
+            llm,
+            channel=selected.get("channel"),
+        )
         is False
     ):
         sys.exit(1)
@@ -189,6 +263,7 @@ def process_video(
     video_title: Optional[str],
     args,
     llm: LLMClient,
+    channel: Optional[str] = None,
 ) -> bool:
     """
     Shared logic for processing a video: fetch transcript, summarize, and save.
@@ -199,6 +274,7 @@ def process_video(
         video_title: Optional video title for filename generation
         args: Parsed CLI arguments (must have no_save and no_stream attributes)
         llm: Initialized LLM client
+        channel: Optional channel/author name for Obsidian frontmatter
 
     Returns:
         True when the video was processed successfully, otherwise False
@@ -213,7 +289,9 @@ def process_video(
     print(f"Transcript: {len(transcript)} characters")
     print("Generating summary...")
     try:
-        summary = summarize_transcript(transcript, llm, stream=not args.no_stream)
+        summary = summarize_transcript(
+            transcript, llm, stream=not args.no_stream, video_id=video_id
+        )
     except Exception as e:
         print(f"\nError generating summary: {str(e)}", file=sys.stderr)
         return False
@@ -221,20 +299,14 @@ def process_video(
     if args.no_stream:
         print("Done.")
 
-    # Prepare output content for file saving (markdown format)
-    output_content = f"""# YouTube Video Summary
-
-| | |
-|---|---|
-| **Video URL** | <{video_url}> |
-| **Video ID** | `{video_id}` |
-| **Generated** | {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} |
-| **Model** | {llm.provider} / {llm.get_model()} |
-
----
-
-{summary}
-"""
+    output_content = format_summary_document(
+        summary=summary,
+        video_id=video_id,
+        video_url=video_url,
+        video_title=video_title,
+        llm=llm,
+        channel=channel,
+    )
 
     # Output handling
     if args.no_save:
@@ -288,13 +360,16 @@ def cmd_summarise(args):
         sys.exit(1)
 
     video_title = None
+    channel = None
     try:
-        video_title = YouTubeHelper.get_video_title(video_id)
+        metadata = YouTubeHelper.get_video_metadata(video_id)
+        video_title = metadata["title"]
+        channel = metadata.get("channel") or None
     except Exception:
         # Title lookup is non-critical; filename fallback still includes video ID.
         video_title = None
 
-    if process_video(video_id, args.url, video_title, args, llm) is False:
+    if process_video(video_id, args.url, video_title, args, llm, channel=channel) is False:
         sys.exit(1)
 
 
@@ -335,12 +410,22 @@ def cmd_channel(args):
         print(f"\n[{index}/{len(videos)}] Processing {video_id}")
 
         try:
-            video_title = YouTubeHelper.get_video_title(video_id)
+            metadata = YouTubeHelper.get_video_metadata(video_id)
+            video_title = metadata["title"]
             print(f"Title: {video_title}")
+            channel = metadata.get("channel") or video.get("channel")
         except Exception:
             video_title = None
+            channel = video.get("channel")
 
-        if process_video(video_id, video["url"], video_title, args, llm):
+        if process_video(
+            video_id,
+            video["url"],
+            video_title,
+            args,
+            llm,
+            channel=channel,
+        ):
             succeeded += 1
         else:
             failed.append(video_id)

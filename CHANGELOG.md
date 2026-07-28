@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Raised minimum `pytubefix` requirement to `>=10.10.0` for working channel URL extraction
 - Channel listing now accepts both URL strings and YouTube objects from `video_urls`, and skips junk entries
+- Summary notes are now Obsidian-friendly: YAML frontmatter, video title as H1, clickable timestamp deep links, topical tags, and no invented wikilinks
+- Prompt asks the model for Obsidian callouts and `#youtube` tags when useful
+
+### Added
+- `format_summary_document` helper for consistent vault-ready markdown output
+- Channel name included in frontmatter when available
 
 ## [0.7.0] - 2026-07-28
 

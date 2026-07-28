@@ -221,6 +221,10 @@ class YouTubeHelper:
             if max_videos is not None:
                 video_urls = islice(video_urls, max_videos)
 
+            raw_channel_name = getattr(channel, "channel_name", None)
+            channel_name = (
+                raw_channel_name.strip() if isinstance(raw_channel_name, str) else None
+            ) or None
             videos = []
             for item in video_urls:
                 video_id = None
@@ -237,7 +241,10 @@ class YouTubeHelper:
                         video_url = f"https://www.youtube.com/watch?v={video_id}"
 
                 if video_id and video_url:
-                    videos.append({"video_id": video_id, "url": video_url})
+                    entry = {"video_id": video_id, "url": video_url}
+                    if channel_name:
+                        entry["channel"] = channel_name
+                    videos.append(entry)
 
             return videos
 
@@ -261,6 +268,22 @@ class YouTubeHelper:
         Raises:
             Exception: If title lookup fails
         """
+        return YouTubeHelper.get_video_metadata(video_id)["title"]
+
+    @staticmethod
+    def get_video_metadata(video_id: str) -> Dict[str, str]:
+        """
+        Get basic video metadata from YouTube.
+
+        Args:
+            video_id: YouTube video ID
+
+        Returns:
+            Dictionary with title and channel keys
+
+        Raises:
+            Exception: If metadata lookup fails
+        """
         from pytubefix import YouTube
 
         try:
@@ -272,10 +295,14 @@ class YouTubeHelper:
             title = (video.title or "").strip()
             if not title:
                 raise Exception("Empty title returned")
-            return title
+            author = video.author if isinstance(video.author, str) else ""
+            return {
+                "title": title,
+                "channel": author.strip(),
+            }
 
         except ValueError:
             raise
         except Exception as e:
-            logger.error(f"Error getting title for video {video_id}: {str(e)}")
+            logger.error(f"Error getting metadata for video {video_id}: {str(e)}")
             raise Exception(f"Failed to get video title: {str(e)}")

@@ -185,35 +185,39 @@ ys() { noglob command ys "$@"; }
 
 ### Output Format
 
-Summary files are saved as markdown (`.md`) with the following structure:
+Summary files are saved as Obsidian-friendly markdown (`.md`) with YAML frontmatter:
 
 ```markdown
-# YouTube Video Summary
-
-| | |
-|---|---|
-| **Video URL** | <https://www.youtube.com/watch?v=VIDEO_ID> |
-| **Video ID** | `VIDEO_ID` |
-| **Generated** | 2025-01-01 14:30:00 |
-| **Model** | anthropic / claude-sonnet-4-5-20250929 |
-
+---
+title: "Video Title"
+url: "https://www.youtube.com/watch?v=VIDEO_ID"
+video_id: VIDEO_ID
+channel: "Channel Name"
+created: 2026-07-28
+tags:
+  - youtube
+  - summary
+model: "anthropic/claude-sonnet-4-5-20250929"
 ---
 
-## Main Topics
+# Video Title
+
+### TL;DR
 ...
 
-## Key Points
+### Key Takeaways
+- Insight with a linked timestamp [12:34](https://www.youtube.com/watch?v=VIDEO_ID&t=754)
+
+### Detailed Summary
 ...
 
-## Detailed Summary
+### Notable Quotes
 ...
 
-## Notable Quotes
-...
-
-## Timestamps for Important Moments
-...
+#youtube #topic
 ```
+
+Notes are ready to drop into an Obsidian vault. Point `--output-dir` at a vault folder for channel runs.
 
 ## Requirements
 
