@@ -187,9 +187,6 @@ class YouTubeHelper:
                     "duration": str(video.length) if video.length else "0",
                     "channel": video.author or "Unknown",
                 }
-                published_at = _format_publish_date(video.publish_date)
-                if published_at:
-                    result["published_at"] = published_at
                 results.append(result)
             return results
 
@@ -312,7 +309,15 @@ class YouTubeHelper:
                 "title": title,
                 "channel": author.strip(),
             }
-            published_at = _format_publish_date(video.publish_date)
+            try:
+                published_at = _format_publish_date(video.publish_date)
+            except Exception:
+                logger.debug(
+                    "Publication date unavailable for video %s",
+                    video_id,
+                    exc_info=True,
+                )
+                published_at = None
             if published_at:
                 metadata["published_at"] = published_at
             return metadata

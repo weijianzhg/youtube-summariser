@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Topical tags are normalized and rendered into frontmatter instead of appended as inline hashtags
 - Model-provided knowledge graph metadata is parsed from validated JSON and omitted from the note body
+- Search loads publication details only for the selected result instead of every candidate
+
+### Fixed
+- Metadata is extracted even when a model places the hidden block before the summary
+- Duplicate model-generated H1 headings are removed from saved notes
+- Incomplete model responses are retried once and rejected instead of being saved as empty notes
+- Untrusted video metadata and transcripts remain in the user-role prompt payload
 
 ## [0.7.1] - 2026-07-28
 

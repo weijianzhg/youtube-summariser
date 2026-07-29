@@ -206,8 +206,8 @@ prerequisites:
 tags:
   - youtube
   - summary
-  - machine-learning
-  - neural-networks
+  - "machine-learning"
+  - "neural-networks"
 model: "anthropic/claude-sonnet-4-5-20250929"
 ---
 
@@ -229,6 +229,10 @@ model: "anthropic/claude-sonnet-4-5-20250929"
 Topics are normalized into reusable Obsidian tags. Concepts, prerequisites, series
 position, content type, and the original publication date are emitted as structured
 properties for filtering and relationship indexing.
+
+These properties make corpus-level linking deterministic, but Obsidian's native Graph
+View only draws edges for actual `[[wikilinks]]`. A vault-wide indexing step is still
+needed to create shared concept notes and links between videos.
 
 Notes are ready to drop into an Obsidian vault. Point `--output-dir` at a vault folder
 for channel runs.
