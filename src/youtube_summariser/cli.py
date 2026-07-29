@@ -233,7 +233,10 @@ def strip_leading_h1(summary: str) -> str:
 
 
 def summary_has_required_sections(summary: str) -> bool:
-    """Return whether required sections appear in order and contain visible content."""
+    """Return whether the summary has complete sections and graph metadata."""
+    if not KNOWLEDGE_GRAPH_PATTERN.search(summary):
+        return False
+
     clean_summary, _ = extract_knowledge_graph_metadata(summary)
     if clean_summary.startswith("```") and clean_summary.endswith("```"):
         return False

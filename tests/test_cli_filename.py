@@ -457,6 +457,15 @@ Details.
 -->"""
         assert cli.summary_has_required_sections(complete)
         assert not cli.summary_has_required_sections(
+            "## TL;DR\nSummary.\n## Key Takeaways\n- Point\n## Detailed Summary\nDetails."
+        )
+        assert not cli.summary_has_required_sections(
+            "## TL;DR\nSummary.\n"
+            "## Key Takeaways\n- Point\n"
+            "## Detailed Summary\nDetails.\n"
+            '<!-- knowledge-graph\n{"content_type":"talk"}'
+        )
+        assert not cli.summary_has_required_sections(
             '<!-- knowledge-graph\n{"content_type":"talk"}\n-->'
         )
         assert not cli.summary_has_required_sections("## TL;DR\nOnly one section.")

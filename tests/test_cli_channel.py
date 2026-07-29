@@ -144,7 +144,10 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
         cli,
         "summarize_transcript",
         lambda transcript, llm, stream=True, video_id=None, video_title=None, channel=None: (
-            "## TL;DR\nA summary.\n## Key Takeaways\n- One\n## Detailed Summary\nDetails."
+            "## TL;DR\nA summary.\n"
+            "## Key Takeaways\n- One\n"
+            "## Detailed Summary\nDetails.\n"
+            '<!-- knowledge-graph\n{"content_type":"talk"}\n-->'
         ),
     )
     args = channel_args(output_dir=tmp_path)
@@ -177,7 +180,10 @@ def test_process_video_retries_one_incomplete_summary(tmp_path, monkeypatch):
     responses = iter(
         [
             '<!-- knowledge-graph\n{"content_type":"talk"}\n-->',
-            "## TL;DR\nA summary.\n## Key Takeaways\n- One\n## Detailed Summary\nDetails.",
+            "## TL;DR\nA summary.\n"
+            "## Key Takeaways\n- One\n"
+            "## Detailed Summary\nDetails.\n"
+            '<!-- knowledge-graph\n{"content_type":"talk"}\n-->',
         ]
     )
     calls = []

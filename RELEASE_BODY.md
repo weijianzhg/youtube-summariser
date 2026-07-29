@@ -13,12 +13,14 @@ Obsidian without repeating metadata extraction during post-processing.
 - Machine-readable metadata is removed from the final note body
 - Topical tags are emitted as canonical frontmatter tags instead of trailing hashtags
 - Search fetches publication details only after a result is selected
+- The default output budget is increased from 3,000 to 6,000 tokens for long videos
 
 ### Reliability
 
 - Invalid graph metadata is ignored without interrupting summary generation
 - Misplaced graph metadata and duplicate model-generated titles are cleaned automatically
-- Incomplete responses are retried once and never saved as empty notes
+- Responses with missing or unfinished graph metadata are retried once and never saved
+  as incomplete notes
 - Uploader-controlled title, channel, and transcript text remain untrusted user-role data
 - Visual details that are absent from a transcript are not inferred
 - Existing summary generation continues to work when optional metadata is unavailable
