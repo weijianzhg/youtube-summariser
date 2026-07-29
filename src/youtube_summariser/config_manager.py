@@ -131,11 +131,11 @@ def run_init() -> None:
 
     # Ensure max_tokens defaults exist
     if "max_tokens" not in config["openai"]:
-        config["openai"]["max_tokens"] = 3000
+        config["openai"]["max_tokens"] = 6000
     if "max_tokens" not in config["anthropic"]:
-        config["anthropic"]["max_tokens"] = 3000
+        config["anthropic"]["max_tokens"] = 6000
     if "max_tokens" not in config["openrouter"]:
-        config["openrouter"]["max_tokens"] = 3000
+        config["openrouter"]["max_tokens"] = 6000
 
     print()
 

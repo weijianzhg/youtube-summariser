@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-28
+
+### Added
+- Relationship-ready Obsidian properties for content type, concepts, prerequisites,
+  and explicit series position
+- Original YouTube publication date in summary frontmatter when metadata is available
+
+### Changed
+- Topical tags are normalized and rendered into frontmatter instead of appended as inline hashtags
+- Model-provided knowledge graph metadata is parsed from validated JSON and omitted from the note body
+- Search loads publication details only for the selected result instead of every candidate
+- Default maximum output tokens increased from 3,000 to 6,000 for all providers
+
+### Fixed
+- Metadata is extracted even when a model places the hidden block before the summary
+- Duplicate model-generated H1 headings are removed from saved notes
+- Responses with missing or unfinished knowledge graph metadata are retried once and
+  rejected instead of being saved as incomplete notes
+- Untrusted video metadata and transcripts remain in the user-role prompt payload
+
 ## [0.7.1] - 2026-07-28
 
 ### Fixed

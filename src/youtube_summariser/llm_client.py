@@ -33,9 +33,9 @@ def load_config() -> dict:
         # Return default config if file not found
         return {
             "provider": "openai",
-            "openai": {"model": "gpt-5.2", "max_tokens": 3000},
-            "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 3000},
-            "openrouter": {"model": "anthropic/claude-sonnet-4.5", "max_tokens": 3000},
+            "openai": {"model": "gpt-5.2", "max_tokens": 6000},
+            "anthropic": {"model": "claude-sonnet-4-5-20250929", "max_tokens": 6000},
+            "openrouter": {"model": "anthropic/claude-sonnet-4.5", "max_tokens": 6000},
         }
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file: {e}")
@@ -125,7 +125,7 @@ class LLMClient:
     def get_max_tokens(self) -> int:
         """Get max tokens for the current provider."""
         provider_config = self.config.get(self.provider, {})
-        return provider_config.get("max_tokens", 3000)
+        return provider_config.get("max_tokens", 6000)
 
     def chat(self, system_prompt: str, user_message: str) -> str:
         """

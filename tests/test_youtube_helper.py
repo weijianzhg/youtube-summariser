@@ -1,5 +1,6 @@
 """Tests for YouTubeHelper class, including search functionality."""
 
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -39,6 +40,7 @@ class TestYouTubeHelperSearch:
         assert results[0]["url"] == "https://www.youtube.com/watch?v=abc123"
         assert results[0]["duration"] == "300"
         assert results[0]["channel"] == "Test Channel"
+        assert "published_at" not in results[0]
 
         assert results[1]["video_id"] == "def456"
         assert results[1]["title"] == "Test Video 2"
@@ -193,11 +195,47 @@ class TestYouTubeHelperVideoTitle:
         """Should return video title when lookup succeeds."""
         mock_video = MagicMock()
         mock_video.title = "Test Title"
+        mock_video.publish_date = datetime(2026, 7, 20, 12, 0)
 
         with patch("pytubefix.YouTube", return_value=mock_video):
             title = YouTubeHelper.get_video_title("abc123")
 
         assert title == "Test Title"
+
+    def test_get_video_metadata_includes_publication_date(self):
+        """Metadata should expose the video's publication date in ISO format."""
+        mock_video = MagicMock()
+        mock_video.title = "Test Title"
+        mock_video.author = "Test Channel"
+        mock_video.publish_date = datetime(2026, 7, 20, 12, 0)
+
+        with patch("pytubefix.YouTube", return_value=mock_video):
+            metadata = YouTubeHelper.get_video_metadata("abc123")
+
+        assert metadata == {
+            "title": "Test Title",
+            "channel": "Test Channel",
+            "published_at": "2026-07-20",
+        }
+
+    def test_get_video_metadata_keeps_required_fields_when_date_lookup_fails(self):
+        """Optional publication-date failures should not discard title and channel."""
+
+        class VideoStub:
+            title = "Test Title"
+            author = "Test Channel"
+
+            @property
+            def publish_date(self):
+                raise Exception("date unavailable")
+
+        with patch("pytubefix.YouTube", return_value=VideoStub()):
+            metadata = YouTubeHelper.get_video_metadata("abc123")
+
+        assert metadata == {
+            "title": "Test Title",
+            "channel": "Test Channel",
+        }
 
     def test_get_video_title_empty_video_id_raises_error(self):
         """Should raise ValueError for empty video IDs."""

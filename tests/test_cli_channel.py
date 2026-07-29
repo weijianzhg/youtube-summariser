@@ -59,8 +59,16 @@ def test_cmd_channel_reuses_one_llm_and_processes_each_video(monkeypatch):
 
     processed = []
 
-    def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
-        processed.append((video_id, video_url, video_title, args, llm))
+    def fake_process_video(
+        video_id,
+        video_url,
+        video_title,
+        args,
+        llm,
+        channel=None,
+        published_at=None,
+    ):
+        processed.append((video_id, video_url, video_title, args, llm, published_at))
         return True
 
     monkeypatch.setattr(cli, "process_video", fake_process_video)
@@ -96,7 +104,15 @@ def test_cmd_channel_continues_after_individual_failure(monkeypatch):
 
     processed = []
 
-    def fake_process_video(video_id, video_url, video_title, args, llm, channel=None):
+    def fake_process_video(
+        video_id,
+        video_url,
+        video_title,
+        args,
+        llm,
+        channel=None,
+        published_at=None,
+    ):
         processed.append(video_id)
         return video_id == "works"
 
@@ -127,7 +143,12 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
     monkeypatch.setattr(
         cli,
         "summarize_transcript",
-        lambda transcript, llm, stream=True, video_id=None: "### TL;DR\nA summary.",
+        lambda transcript, llm, stream=True, video_id=None, video_title=None, channel=None: (
+            "## TL;DR\nA summary.\n"
+            "## Key Takeaways\n- One\n"
+            "## Detailed Summary\nDetails.\n"
+            '<!-- knowledge-graph\n{"content_type":"talk"}\n-->'
+        ),
     )
     args = channel_args(output_dir=tmp_path)
     llm = FakeLLMClient()
@@ -149,5 +170,100 @@ def test_process_video_saves_channel_summary_in_output_directory(tmp_path, monke
     assert 'title: "Example Video"' in content
     assert 'channel: "Example Channel"' in content
     assert "# Example Video\n" in content
-    assert "### TL;DR\nA summary." in content
+    assert "## TL;DR\nA summary." in content
     assert "https://www.youtube.com/watch?v=abc123" in content
+
+
+def test_process_video_retries_one_incomplete_summary(tmp_path, monkeypatch):
+    """A malformed first response should be retried before writing the note."""
+    monkeypatch.setattr(cli.YouTubeHelper, "get_transcript", lambda video_id: "[00:00] Hello")
+    responses = iter(
+        [
+            '<!-- knowledge-graph\n{"content_type":"talk"}\n-->',
+            "## TL;DR\nA summary.\n"
+            "## Key Takeaways\n- One\n"
+            "## Detailed Summary\nDetails.\n"
+            '<!-- knowledge-graph\n{"content_type":"talk"}\n-->',
+        ]
+    )
+    calls = []
+
+    def fake_summarize(
+        transcript,
+        llm,
+        stream=True,
+        video_id=None,
+        video_title=None,
+        channel=None,
+    ):
+        calls.append((video_id, video_title, channel))
+        return next(responses)
+
+    monkeypatch.setattr(cli, "summarize_transcript", fake_summarize)
+    args = channel_args(output_dir=tmp_path)
+
+    assert cli.process_video(
+        "abc123",
+        "https://www.youtube.com/watch?v=abc123",
+        "Example Video",
+        args,
+        FakeLLMClient(),
+        channel="Example Channel",
+    )
+    assert calls == [
+        ("abc123", "Example Video", "Example Channel"),
+        ("abc123", "Example Video", "Example Channel"),
+    ]
+    assert len(list(tmp_path.glob("*.md"))) == 1
+
+
+def test_process_video_rejects_two_incomplete_summaries(tmp_path, monkeypatch, capsys):
+    """Repeated incomplete responses should fail without saving a broken note."""
+    monkeypatch.setattr(cli.YouTubeHelper, "get_transcript", lambda video_id: "[00:00] Hello")
+    calls = []
+
+    def fake_summarize(*args, **kwargs):
+        calls.append(1)
+        return '<!-- knowledge-graph\n{"content_type":"talk"}\n-->'
+
+    monkeypatch.setattr(cli, "summarize_transcript", fake_summarize)
+    args = channel_args(output_dir=tmp_path)
+
+    succeeded = cli.process_video(
+        "abc123",
+        "https://www.youtube.com/watch?v=abc123",
+        "Example Video",
+        args,
+        FakeLLMClient(),
+    )
+
+    assert succeeded is False
+    assert calls == [1, 1]
+    assert list(tmp_path.glob("*.md")) == []
+    assert "incomplete response twice" in capsys.readouterr().err
+
+
+def test_process_video_does_not_retry_after_keyboard_interrupt(tmp_path, monkeypatch, capsys):
+    """Cancelling a stream should not start another paid LLM request."""
+    monkeypatch.setattr(cli.YouTubeHelper, "get_transcript", lambda video_id: "[00:00] Hello")
+    calls = []
+
+    def fake_summarize(*args, **kwargs):
+        calls.append(1)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "summarize_transcript", fake_summarize)
+    args = channel_args(output_dir=tmp_path)
+
+    succeeded = cli.process_video(
+        "abc123",
+        "https://www.youtube.com/watch?v=abc123",
+        "Example Video",
+        args,
+        FakeLLMClient(),
+    )
+
+    assert succeeded is False
+    assert calls == [1]
+    assert list(tmp_path.glob("*.md")) == []
+    assert "cancelled" in capsys.readouterr().err

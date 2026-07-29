@@ -8,6 +8,14 @@ from youtube_summariser.llm_client import LLMClient
 class TestLLMClientAPIKeyValidation:
     """Test that LLMClient properly validates API keys."""
 
+    @pytest.mark.parametrize("provider", ["openai", "anthropic", "openrouter"])
+    def test_default_max_tokens_is_6000(self, provider, monkeypatch):
+        """Providers without a custom limit should use the larger output budget."""
+        monkeypatch.setattr(LLMClient, "_init_client", lambda self: None)
+        client = LLMClient(config={"provider": provider, provider: {}}, provider=provider)
+
+        assert client.get_max_tokens() == 6000
+
     def test_no_api_keys_raises_unified_error(self, monkeypatch):
         """When no API keys are set, should raise ValueError with unified message."""
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)

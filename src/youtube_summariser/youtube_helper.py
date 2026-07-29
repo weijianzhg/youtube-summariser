@@ -2,6 +2,7 @@
 
 import logging
 import re
+from datetime import date, datetime
 from itertools import islice
 from typing import Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
@@ -9,6 +10,15 @@ from urllib.parse import parse_qs, urlparse
 from youtube_transcript_api import YouTubeTranscriptApi
 
 logger = logging.getLogger(__name__)
+
+
+def _format_publish_date(value) -> Optional[str]:
+    """Convert a provider publication date to ISO format."""
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return None
 
 
 class YouTubeHelper:
@@ -170,15 +180,14 @@ class YouTubeHelper:
             s = Search(query)
             results = []
             for video in s.videos[:max_results]:
-                results.append(
-                    {
-                        "video_id": video.video_id,
-                        "title": video.title,
-                        "url": video.watch_url,
-                        "duration": str(video.length) if video.length else "0",
-                        "channel": video.author or "Unknown",
-                    }
-                )
+                result = {
+                    "video_id": video.video_id,
+                    "title": video.title,
+                    "url": video.watch_url,
+                    "duration": str(video.length) if video.length else "0",
+                    "channel": video.author or "Unknown",
+                }
+                results.append(result)
             return results
 
         except ValueError:
@@ -279,7 +288,7 @@ class YouTubeHelper:
             video_id: YouTube video ID
 
         Returns:
-            Dictionary with title and channel keys
+            Dictionary with title, channel, and optional published_at keys
 
         Raises:
             Exception: If metadata lookup fails
@@ -296,10 +305,22 @@ class YouTubeHelper:
             if not title:
                 raise Exception("Empty title returned")
             author = video.author if isinstance(video.author, str) else ""
-            return {
+            metadata = {
                 "title": title,
                 "channel": author.strip(),
             }
+            try:
+                published_at = _format_publish_date(video.publish_date)
+            except Exception:
+                logger.debug(
+                    "Publication date unavailable for video %s",
+                    video_id,
+                    exc_info=True,
+                )
+                published_at = None
+            if published_at:
+                metadata["published_at"] = published_at
+            return metadata
 
         except ValueError:
             raise
