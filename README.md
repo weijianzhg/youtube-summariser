@@ -233,6 +233,11 @@ Generated notes include normalized tags and structured properties for Obsidian.
 - Python 3.10+
 - An API key for OpenAI, Anthropic, or OpenRouter
 
+## Contributors
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for people whose code, feedback, and ideas
+have helped shape YouTube Summariser.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
